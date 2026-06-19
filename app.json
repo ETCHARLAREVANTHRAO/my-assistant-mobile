@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "My Assistant",
+    "slug": "my-assistant",
+    "owner": "reva333",
+    "version": "1.0.0",
+    "updates": {
+      "enabled": false
+    },
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.myassistant.app"
+    },
+    "android": {
+      "package": "com.myassistant.app"
+    },
+    "plugins": [
+      "expo-document-picker"
+    ]
+  }
+}
