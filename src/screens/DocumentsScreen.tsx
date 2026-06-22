@@ -26,10 +26,14 @@ export default function DocumentsScreen() {
     }
   }, []);
 
-  useFocusEffect(loadDocs);
+  useFocusEffect(
+    useCallback(() => {
+      loadDocs();
+    }, [loadDocs])
+  );
 
   const pickAndUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: 'text/markdown' });
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
