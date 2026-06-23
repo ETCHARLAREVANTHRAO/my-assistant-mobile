@@ -33,7 +33,7 @@ export default function AuthScreen() {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (e: any) {
-      setError(friendlyError(e.code));
+      setError(`${friendlyError(e.code)} [${e.code}]`);
     } finally {
       setLoading(false);
     }
