@@ -110,6 +110,13 @@ export const weatherApi = {
   },
 };
 
+export const usageApi = {
+  get: async () => {
+    const { data } = await api.get('/usage');
+    return data;
+  },
+};
+
 export const signOut = async () => {
   await auth.signOut();
 };
