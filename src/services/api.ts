@@ -4,6 +4,8 @@ import { auth } from '../config/firebase';
 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+console.log('[API] BASE_URL:', BASE_URL);
+
 const api = axios.create({ baseURL: BASE_URL, timeout: 30000 });
 
 // Attach Firebase ID token to every request
