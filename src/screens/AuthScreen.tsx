@@ -10,7 +10,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
 type Mode = 'signin' | 'signup';
