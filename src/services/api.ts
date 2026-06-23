@@ -48,17 +48,35 @@ export const documentsApi = {
     return data.documents;
   },
 
-  upload: async (uri: string, filename: string): Promise<string> => {
-    const form = new FormData();
+  upload: async (uri: string, filename: string, file?: File): Promise<string> => {
     if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      form.append('file', blob, filename);
-    } else {
-      form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
+      // Use native fetch on web — axios has FormData boundary issues
+      const form = new FormData();
+      if (file) {
+        form.append('file', file, filename);
+      } else {
+        const res = await fetch(uri);
+        const blob = await res.blob();
+        form.append('file', blob, filename);
+      }
+      const headers: Record<string, string> = {};
+      try {
+        const user = auth.currentUser;
+        if (user) headers['Authorization'] = `Bearer ${await user.getIdToken()}`;
+      } catch {}
+      const res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail ?? 'Upload failed');
+      }
+      const json = await res.json();
+      return json.message;
     }
+    // Mobile: use axios with RN file object
+    const form = new FormData();
+    form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
     const { data } = await api.post<{ message: string }>('/documents/upload', form, {
-      headers: Platform.OS === 'web' ? {} : { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data.message;
   },

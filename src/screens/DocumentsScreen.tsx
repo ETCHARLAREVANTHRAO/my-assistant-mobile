@@ -45,7 +45,7 @@ export default function DocumentsScreen() {
     const asset = result.assets[0];
     setUploading(true);
     try {
-      const msg = await documentsApi.upload(asset.uri, asset.name);
+      const msg = await documentsApi.upload(asset.uri, asset.name, (asset as any).file);
       showMsg(msg || 'Uploaded successfully!');
       await loadDocs();
     } catch (e: any) {
