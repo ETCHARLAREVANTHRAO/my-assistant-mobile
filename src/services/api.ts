@@ -50,19 +50,11 @@ export const documentsApi = {
 
   upload: async (uri: string, filename: string, file?: File): Promise<string> => {
     if (Platform.OS === 'web') {
-      const form = new FormData();
+      // `file` is always a real File object when called from the native <input type="file">
+      if (!(file instanceof File)) throw new Error('No file provided.');
 
-      if (file instanceof File) {
-        form.append('file', file, filename);
-      } else {
-        try {
-          const blobRes = await fetch(uri);
-          const blob = await blobRes.blob();
-          form.append('file', blob, filename);
-        } catch (blobErr: any) {
-          throw new Error('Could not read file: ' + (blobErr.message ?? 'unknown'));
-        }
-      }
+      const form = new FormData();
+      form.append('file', file, file.name);
 
       const headers: Record<string, string> = {};
       try {
@@ -74,7 +66,7 @@ export const documentsApi = {
       try {
         res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
       } catch (netErr: any) {
-        throw new Error('Could not reach server (' + BASE_URL + '): ' + (netErr.message ?? 'network error'));
+        throw new Error('Network error — could not reach server: ' + (netErr.message ?? 'Failed to fetch'));
       }
 
       if (!res.ok) {

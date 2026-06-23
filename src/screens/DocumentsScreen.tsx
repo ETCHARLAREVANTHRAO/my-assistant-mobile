@@ -39,13 +39,40 @@ export default function DocumentsScreen() {
   );
 
   const pickAndUpload = async () => {
+    if (Platform.OS === 'web') {
+      // Use native browser file picker — expo-document-picker blob URIs are unreliable on web
+      const doc = typeof document !== 'undefined' ? document : null;
+      if (!doc) return;
+      const input = doc.createElement('input');
+      input.type = 'file';
+      input.accept = '*/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+          const msg = await documentsApi.upload('', file.name, file);
+          showMsg(msg || 'Uploaded successfully!');
+          await loadDocs();
+        } catch (e: any) {
+          showMsg('Upload failed: ' + (e?.message ?? 'Unknown error'), true);
+        } finally {
+          setUploading(false);
+          input.value = '';
+        }
+      };
+      input.click();
+      return;
+    }
+
+    // Mobile: use expo-document-picker
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
     setUploading(true);
     try {
-      const msg = await documentsApi.upload(asset.uri, asset.name, (asset as any).file);
+      const msg = await documentsApi.upload(asset.uri, asset.name);
       showMsg(msg || 'Uploaded successfully!');
       await loadDocs();
     } catch (e: any) {
