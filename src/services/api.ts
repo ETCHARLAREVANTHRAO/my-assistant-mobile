@@ -6,12 +6,16 @@ export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://my-assistant
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 30000 });
 
-// Attach Firebase ID token to every request
+// Attach Firebase ID token to every request (if logged in)
 api.interceptors.request.use(async (config) => {
-  const user = auth.currentUser;
-  if (user) {
-    const token = await user.getIdToken();
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      const token = await user.getIdToken();
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // Firebase not ready — proceed without auth header
   }
   return config;
 });
@@ -54,7 +58,7 @@ export const documentsApi = {
       form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
     }
     const { data } = await api.post<{ message: string }>('/documents/upload', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: Platform.OS === 'web' ? {} : { 'Content-Type': 'multipart/form-data' },
     });
     return data.message;
   },
