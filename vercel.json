@@ -1,5 +1,11 @@
 {
   "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/backend/:path*",
+      "destination": "https://my-assistant-backend-nxwg.onrender.com/:path*"
+    }
+  ]
 }

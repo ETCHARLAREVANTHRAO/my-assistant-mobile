@@ -2,7 +2,10 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
-export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://my-assistant-backend-nxwg.onrender.com';
+// Web: route through Vercel proxy (/backend → Render) — no CORS needed
+// Mobile: call Render directly
+const RENDER_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://my-assistant-backend-nxwg.onrender.com';
+export const BASE_URL = Platform.OS === 'web' ? '/backend' : RENDER_URL;
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 30000 });
 
