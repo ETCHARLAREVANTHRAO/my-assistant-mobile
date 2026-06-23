@@ -50,24 +50,36 @@ export const documentsApi = {
 
   upload: async (uri: string, filename: string, file?: File): Promise<string> => {
     if (Platform.OS === 'web') {
-      // Use native fetch on web — axios has FormData boundary issues
       const form = new FormData();
-      if (file) {
+
+      if (file instanceof File) {
         form.append('file', file, filename);
       } else {
-        const res = await fetch(uri);
-        const blob = await res.blob();
-        form.append('file', blob, filename);
+        try {
+          const blobRes = await fetch(uri);
+          const blob = await blobRes.blob();
+          form.append('file', blob, filename);
+        } catch (blobErr: any) {
+          throw new Error('Could not read file: ' + (blobErr.message ?? 'unknown'));
+        }
       }
+
       const headers: Record<string, string> = {};
       try {
         const user = auth.currentUser;
         if (user) headers['Authorization'] = `Bearer ${await user.getIdToken()}`;
       } catch {}
-      const res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
+
+      let res: Response;
+      try {
+        res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
+      } catch (netErr: any) {
+        throw new Error('Could not reach server (' + BASE_URL + '): ' + (netErr.message ?? 'network error'));
+      }
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(err.detail ?? 'Upload failed');
+        throw new Error(err.detail ?? 'Server error ' + res.status);
       }
       const json = await res.json();
       return json.message;
