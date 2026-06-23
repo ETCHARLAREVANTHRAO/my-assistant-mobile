@@ -45,10 +45,16 @@ export const chatApi = {
   },
 };
 
+export interface DocumentsResponse {
+  documents: string[];
+  used_bytes: number;
+  limit_bytes: number;
+}
+
 export const documentsApi = {
-  list: async (): Promise<string[]> => {
-    const { data } = await api.get<{ documents: string[] }>('/documents');
-    return data.documents;
+  list: async (): Promise<DocumentsResponse> => {
+    const { data } = await api.get<DocumentsResponse>('/documents');
+    return data;
   },
 
   upload: async (uri: string, filename: string, file?: File): Promise<string> => {

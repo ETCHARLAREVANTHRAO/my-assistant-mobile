@@ -10,21 +10,30 @@ import { useFocusEffect } from '@react-navigation/native';
 import DocumentCard from '../components/DocumentCard';
 import { documentsApi } from '../services/api';
 
+const LIMIT_MB = 15;
+
+function formatMB(bytes: number) {
+  return (bytes / (1024 * 1024)).toFixed(1);
+}
+
 export default function DocumentsScreen() {
   const [docs, setDocs] = useState<string[]>([]);
+  const [usedBytes, setUsedBytes] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
 
   const showMsg = (text: string, error = false) => {
     setMessage({ text, error });
-    setTimeout(() => setMessage(null), 4000);
+    setTimeout(() => setMessage(null), 5000);
   };
 
   const loadDocs = useCallback(async () => {
     setLoading(true);
     try {
-      setDocs(await documentsApi.list());
+      const res = await documentsApi.list();
+      setDocs(res.documents);
+      setUsedBytes(res.used_bytes);
     } catch (e: any) {
       showMsg('Could not load documents: ' + (e?.message ?? 'Unknown error'), true);
     } finally {
@@ -32,15 +41,10 @@ export default function DocumentsScreen() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadDocs();
-    }, [loadDocs])
-  );
+  useFocusEffect(useCallback(() => { loadDocs(); }, [loadDocs]));
 
   const pickAndUpload = async () => {
     if (Platform.OS === 'web') {
-      // Use native browser file picker — expo-document-picker blob URIs are unreliable on web
       const doc = typeof document !== 'undefined' ? document : null;
       if (!doc) return;
       const input = doc.createElement('input');
@@ -66,7 +70,6 @@ export default function DocumentsScreen() {
       return;
     }
 
-    // Mobile: use expo-document-picker
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
 
@@ -89,15 +92,18 @@ export default function DocumentsScreen() {
       ? window.confirm(`Remove "${filename}" from the knowledge base?`)
       : true;
     if (!confirmed) return;
-
     try {
       await documentsApi.delete(filename);
-      setDocs(prev => prev.filter(d => d !== filename));
       showMsg(`"${filename}" deleted.`);
+      await loadDocs();
     } catch {
       showMsg('Could not delete document.', true);
     }
   };
+
+  const usedMB = parseFloat(formatMB(usedBytes));
+  const pct = Math.min((usedMB / LIMIT_MB) * 100, 100);
+  const barColor = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffa94d' : '#6C63FF';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -108,6 +114,17 @@ export default function DocumentsScreen() {
             ? <ActivityIndicator color="#fff" size="small" />
             : <Ionicons name="add" size={22} color="#fff" />}
         </TouchableOpacity>
+      </View>
+
+      {/* Quota bar */}
+      <View style={styles.quotaContainer}>
+        <View style={styles.quotaRow}>
+          <Text style={styles.quotaText}>{formatMB(usedBytes)} MB used</Text>
+          <Text style={styles.quotaText}>{LIMIT_MB} MB limit</Text>
+        </View>
+        <View style={styles.barBg}>
+          <View style={[styles.barFill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
+        </View>
       </View>
 
       {message && (
@@ -143,9 +160,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#6C63FF', width: 38, height: 38,
     borderRadius: 19, justifyContent: 'center', alignItems: 'center',
   },
-  toast: {
-    margin: 12, padding: 12, borderRadius: 10,
-  },
+  quotaContainer: { paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2a2a3e' },
+  quotaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  quotaText: { color: '#888', fontSize: 12 },
+  barBg: { height: 6, backgroundColor: '#2a2a3e', borderRadius: 3, overflow: 'hidden' },
+  barFill: { height: 6, borderRadius: 3 },
+  toast: { margin: 12, padding: 12, borderRadius: 10 },
   toastSuccess: { backgroundColor: '#1a3a2a' },
   toastError: { backgroundColor: '#3a1a1a' },
   toastText: { color: '#fff', fontSize: 14, textAlign: 'center' },
