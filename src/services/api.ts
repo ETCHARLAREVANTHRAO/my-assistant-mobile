@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
@@ -45,7 +46,13 @@ export const documentsApi = {
 
   upload: async (uri: string, filename: string): Promise<string> => {
     const form = new FormData();
-    form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      form.append('file', blob, filename);
+    } else {
+      form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
+    }
     const { data } = await api.post<{ message: string }>('/documents/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
