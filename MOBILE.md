@@ -1,6 +1,6 @@
 # mobile/
 
-Expo (React Native + TypeScript) app — runs on both Android and iOS.
+Expo SDK 54 (React Native + TypeScript) app — runs on Android, iOS, and web.
 
 ## Folder Structure
 
@@ -10,12 +10,14 @@ mobile/
 ├── app.json                   ← Expo config (name, bundle ID, splash, icons)
 ├── package.json
 ├── tsconfig.json
+├── vercel.json                ← Web deployment config (Vercel)
+├── .env                       ← EXPO_PUBLIC_API_URL (not committed)
 └── src/
     ├── navigation/
     │   └── AppNavigator.tsx   ← Bottom tab navigator (Chat / Documents / Weather)
     ├── screens/
     │   ├── ChatScreen.tsx     ← Main chat UI with message history
-    │   ├── DocumentsScreen.tsx ← Upload/list/delete Markdown files
+    │   ├── DocumentsScreen.tsx ← Upload/list/delete documents
     │   └── WeatherScreen.tsx  ← City search + weather display
     ├── components/
     │   ├── MessageBubble.tsx  ← Single chat message (user = purple, bot = dark)
@@ -25,11 +27,9 @@ mobile/
         └── api.ts             ← Axios client for all backend calls
 ```
 
-## Running on Your Phone (Development)
+## Running on Your Phone (Local Dev)
 
-1. Install **Expo Go** on your phone:
-   - Android: [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
-   - iOS: App Store
+1. Install **Expo Go** on your phone (Android: Play Store / iOS: App Store).
 
 2. Install dependencies:
    ```bash
@@ -37,41 +37,68 @@ mobile/
    npm install
    ```
 
-3. Set the backend URL. Create `mobile/.env`:
+3. Set backend URL in `mobile/.env`:
    ```
-   EXPO_PUBLIC_API_URL=https://your-app.up.railway.app
+   EXPO_PUBLIC_API_URL=http://localhost:8000
    ```
-   (For local dev, use your PC's IP: `http://192.168.1.XXX:8000` — find it with `ipconfig`)
 
-4. Start Expo:
+4. Connect phone via ADB wireless debugging:
+   ```bash
+   # Replace with your phone's IP:port shown in Developer Options
+   adb connect 192.168.x.x:PORT
+
+   # Tunnel so phone can reach localhost:8000
+   adb reverse tcp:8000 tcp:8000
+   adb reverse tcp:8081 tcp:8081
+   ```
+
+5. Start Expo:
    ```bash
    npx expo start
    ```
 
-5. Scan the QR code with Expo Go on your phone. The app loads instantly over WiFi.
+6. Scan the QR code with Expo Go. The app connects to your local backend through ADB.
+
+## Using the Cloud Backend
+
+Change `mobile/.env` to point to Render:
+```
+EXPO_PUBLIC_API_URL=https://my-assistant-backend-nxwg.onrender.com
+```
+
+Then restart Expo (`r` in the terminal to reload).
+
+## Supported Document Types
+
+PDF, DOCX, TXT, Markdown, and images (JPG, PNG, etc.) — the `+` button on the Documents screen opens the system file picker for all file types.
 
 ## Design System
 
-- Dark theme throughout: background `#1a1a2e`, cards `#2a2a3e`
-- Accent color: `#6C63FF` (purple) for interactive elements
-- Icons: `@expo/vector-icons` Ionicons set
+- Dark theme: background `#1a1a2e`, cards `#2a2a3e`
+- Accent: `#6C63FF` (purple) for buttons and user bubbles
+- Icons: `@expo/vector-icons` Ionicons
 
-## Key Files
+## Deploy to Web (Vercel)
 
-- [src/services/api.ts](src/services/api.ts) — the single place where `BASE_URL` is set. Change this when you have a Railway URL.
-- [src/screens/ChatScreen.tsx](src/screens/ChatScreen.tsx) — manages message list state, sends to `/chat`, handles loading/error states.
-- [src/screens/DocumentsScreen.tsx](src/screens/DocumentsScreen.tsx) — uses `expo-document-picker` to open `.md` files from the phone's filesystem and upload them.
+The app can be exported as a static web app and deployed to Vercel.
 
-## Building for Production
+1. Push `mobile/` to a GitHub repo (e.g. `my-assistant-mobile`).
+2. Import the repo in [vercel.com](https://vercel.com).
+3. Vercel uses `vercel.json`:
+   ```json
+   {
+     "buildCommand": "npx expo export --platform web",
+     "outputDirectory": "dist"
+   }
+   ```
+4. Add `EXPO_PUBLIC_API_URL` as an environment variable in Vercel pointing to the Render backend.
+
+## Building a Native APK (Android)
 
 ```bash
-# Install EAS CLI
 npm install -g eas-cli
 eas login
-
-# Build Android APK
 eas build -p android --profile preview
-
-# Build iOS (requires Apple Developer account)
-eas build -p ios --profile preview
 ```
+
+iOS build requires an Apple Developer account.

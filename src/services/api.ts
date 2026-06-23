@@ -1,10 +1,19 @@
 import axios from 'axios';
+import { auth } from '../config/firebase';
 
-// Change this to your Railway URL after deploying, or your PC's IP for local dev
-// e.g. "http://192.168.1.100:8000" for local, "https://my-assistant.up.railway.app" for cloud
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 30000 });
+
+// Attach Firebase ID token to every request
+api.interceptors.request.use(async (config) => {
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export interface ChatResponse {
   reply: string;
@@ -36,7 +45,7 @@ export const documentsApi = {
 
   upload: async (uri: string, filename: string): Promise<string> => {
     const form = new FormData();
-    form.append('file', { uri, name: filename, type: 'text/markdown' } as any);
+    form.append('file', { uri, name: filename, type: 'application/octet-stream' } as any);
     const { data } = await api.post<{ message: string }>('/documents/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -53,4 +62,8 @@ export const weatherApi = {
     const { data } = await api.get<WeatherData>('/weather', { params: { city } });
     return data;
   },
+};
+
+export const signOut = async () => {
+  await auth.signOut();
 };
