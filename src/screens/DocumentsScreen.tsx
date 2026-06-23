@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, ActivityIndicator, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -14,13 +14,19 @@ export default function DocumentsScreen() {
   const [docs, setDocs] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+
+  const showMsg = (text: string, error = false) => {
+    setMessage({ text, error });
+    setTimeout(() => setMessage(null), 4000);
+  };
 
   const loadDocs = useCallback(async () => {
     setLoading(true);
     try {
       setDocs(await documentsApi.list());
-    } catch {
-      Alert.alert('Error', 'Could not load documents. Is the server running?');
+    } catch (e: any) {
+      showMsg('Could not load documents: ' + (e?.message ?? 'Unknown error'), true);
     } finally {
       setLoading(false);
     }
@@ -40,30 +46,29 @@ export default function DocumentsScreen() {
     setUploading(true);
     try {
       const msg = await documentsApi.upload(asset.uri, asset.name);
-      Alert.alert('Uploaded', msg);
+      showMsg(msg || 'Uploaded successfully!');
       await loadDocs();
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.response?.data?.detail ?? 'Unknown error');
+      const detail = e?.response?.data?.detail ?? e?.message ?? 'Unknown error';
+      showMsg('Upload failed: ' + detail, true);
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async (filename: string) => {
-    Alert.alert('Delete', `Remove "${filename}" from the knowledge base?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          try {
-            await documentsApi.delete(filename);
-            setDocs(prev => prev.filter(d => d !== filename));
-          } catch {
-            Alert.alert('Error', 'Could not delete document');
-          }
-        },
-      },
-    ]);
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`Remove "${filename}" from the knowledge base?`)
+      : true;
+    if (!confirmed) return;
+
+    try {
+      await documentsApi.delete(filename);
+      setDocs(prev => prev.filter(d => d !== filename));
+      showMsg(`"${filename}" deleted.`);
+    } catch {
+      showMsg('Could not delete document.', true);
+    }
   };
 
   return (
@@ -76,10 +81,17 @@ export default function DocumentsScreen() {
             : <Ionicons name="add" size={22} color="#fff" />}
         </TouchableOpacity>
       </View>
+
+      {message && (
+        <View style={[styles.toast, message.error ? styles.toastError : styles.toastSuccess]}>
+          <Text style={styles.toastText}>{message.text}</Text>
+        </View>
+      )}
+
       {loading
         ? <ActivityIndicator style={styles.center} color="#6C63FF" />
         : docs.length === 0
-          ? <Text style={styles.empty}>No documents yet. Tap + to upload a Markdown file.</Text>
+          ? <Text style={styles.empty}>No documents yet. Tap + to upload.</Text>
           : (
             <FlatList
               data={docs}
@@ -94,23 +106,21 @@ export default function DocumentsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a2e' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a3e',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#2a2a3e',
   },
   title: { fontSize: 20, fontWeight: '700', color: '#fff' },
   uploadBtn: {
-    backgroundColor: '#6C63FF',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#6C63FF', width: 38, height: 38,
+    borderRadius: 19, justifyContent: 'center', alignItems: 'center',
   },
+  toast: {
+    margin: 12, padding: 12, borderRadius: 10,
+  },
+  toastSuccess: { backgroundColor: '#1a3a2a' },
+  toastError: { backgroundColor: '#3a1a1a' },
+  toastText: { color: '#fff', fontSize: 14, textAlign: 'center' },
   center: { flex: 1, alignSelf: 'center' },
   empty: { color: '#666', textAlign: 'center', marginTop: 60, paddingHorizontal: 40, fontSize: 15, lineHeight: 22 },
 });
