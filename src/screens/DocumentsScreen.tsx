@@ -55,7 +55,8 @@ export default function DocumentsScreen() {
           showMsg(msg || 'Uploaded successfully!');
           await loadDocs();
         } catch (e: any) {
-          showMsg('Upload failed: ' + (e?.message ?? 'Unknown error'), true);
+          console.error('Upload error:', e);
+          showMsg('Upload failed: ' + (e?.message || 'Unknown error'), true);
         } finally {
           setUploading(false);
           input.value = '';

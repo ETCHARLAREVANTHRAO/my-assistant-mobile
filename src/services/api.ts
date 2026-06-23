@@ -73,11 +73,15 @@ export const documentsApi = {
       }
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(err.detail ?? 'Server error ' + res.status);
+        let detail = `Server error ${res.status}`;
+        try {
+          const body = await res.text();
+          try { detail = (JSON.parse(body).detail) || detail; } catch { if (body) detail = body.slice(0, 300); }
+        } catch {}
+        throw new Error(detail);
       }
       const json = await res.json();
-      return json.message;
+      return json.message || 'Uploaded successfully!';
     }
     // Mobile: use axios with RN file object
     const form = new FormData();
