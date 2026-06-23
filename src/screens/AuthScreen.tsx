@@ -7,7 +7,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
+import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
 type Mode = 'signin' | 'signup';
@@ -21,6 +24,19 @@ export default function AuthScreen() {
   const [resetSent, setResetSent] = useState(false);
 
   const clearState = () => { setError(''); setResetSent(false); };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e: any) {
+      setError(e.code ? `${friendlyError(e.code)} [${e.code}]` : String(e.message || e));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!email || !password) { setError('Please enter email and password.'); return; }
@@ -109,6 +125,19 @@ export default function AuthScreen() {
             <Text style={styles.link}>Forgot password?</Text>
           </TouchableOpacity>
         )}
+
+        {Platform.OS === 'web' && (
+          <>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn} disabled={loading}>
+              <Text style={styles.googleButtonText}>🔵  Continue with Google</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -150,4 +179,12 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   link: { color: '#6C63FF', textAlign: 'center', fontSize: 14, marginTop: 4 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#3a3a4e' },
+  dividerText: { color: '#888', marginHorizontal: 12, fontSize: 13 },
+  googleButton: {
+    backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#ddd',
+  },
+  googleButtonText: { color: '#333', fontSize: 15, fontWeight: '600' },
 });
