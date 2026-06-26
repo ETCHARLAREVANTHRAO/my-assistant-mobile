@@ -120,3 +120,29 @@ export const usageApi = {
 export const signOut = async () => {
   await auth.signOut();
 };
+
+// ── Exam RAG backend ──────────────────────────────────────────────────────────
+const EXAM_URL = Platform.OS === 'web' ? '/exam' : 'https://exam-rag-backend.onrender.com';
+
+export interface ExamChatResponse {
+  reply: string;
+  sources: string[];
+}
+
+export const examApi = {
+  chat: async (message: string): Promise<ExamChatResponse> => {
+    const user = auth.currentUser;
+    const user_id = user?.uid ?? 'anon';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (user) {
+      try { headers['Authorization'] = `Bearer ${await user.getIdToken()}`; } catch {}
+    }
+    const res = await fetch(`${EXAM_URL}/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ message, user_id }),
+    });
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    return res.json();
+  },
+};

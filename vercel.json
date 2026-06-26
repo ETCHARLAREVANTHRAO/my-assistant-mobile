@@ -6,6 +6,10 @@
     {
       "source": "/backend/:path*",
       "destination": "https://my-assistant-backend-nxwg.onrender.com/:path*"
+    },
+    {
+      "source": "/exam/:path*",
+      "destination": "https://exam-rag-backend.onrender.com/:path*"
     }
   ]
 }

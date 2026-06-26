@@ -5,6 +5,7 @@ import ChatScreen from '../screens/ChatScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ExamScreen from '../screens/ExamScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -32,6 +33,11 @@ export default function AppNavigator() {
         name="Weather"
         component={WeatherScreen}
         options={{ tabBarIcon: ({ color, size }) => <Ionicons name="partly-sunny-outline" size={size} color={color} /> }}
+      />
+      <Tab.Screen
+        name="Exam"
+        component={ExamScreen}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="school-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="Profile"
