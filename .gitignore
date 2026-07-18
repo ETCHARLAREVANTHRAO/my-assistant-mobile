@@ -3,3 +3,6 @@ node_modules/
 dist/
 web-build/
 .env
+
+.vercel
+.env*
