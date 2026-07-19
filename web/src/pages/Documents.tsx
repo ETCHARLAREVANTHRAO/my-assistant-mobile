@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Layout from '../components/Layout';
-import { getDocuments, uploadDocument, deleteDocument } from '../services/api';
+import { getDocuments, uploadDocument, deleteDocument, syncDrive } from '../services/api';
 
 interface DocCard {
   filename: string;
@@ -27,6 +27,8 @@ export default function Documents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +79,25 @@ export default function Documents() {
     }
   };
 
+  const handleDriveSync = async () => {
+    setError('');
+    setSyncMessage('');
+    setSyncing(true);
+    try {
+      const result = await syncDrive();
+      await refetch();
+      const parts = [];
+      if (result.ingested.length) parts.push(`${result.ingested.length} synced`);
+      if (result.skipped.length) parts.push(`${result.skipped.length} skipped (unsupported type)`);
+      if (result.failed.length) parts.push(`${result.failed.length} failed`);
+      setSyncMessage(parts.length ? parts.join(', ') : 'Everything already up to date.');
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Drive sync failed.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <Layout activePage="documents" searchPlaceholder="Search documents...">
       <div className="p-gutter max-w-container-max mx-auto w-full">
@@ -93,7 +114,17 @@ export default function Documents() {
               </p>
             )}
           </div>
-          <div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDriveSync}
+              disabled={syncing}
+              className="flex items-center gap-2 bg-surface border border-border text-text-primary px-6 py-3 rounded-[16px] font-label-md text-label-md hover:bg-surface-container-low transition-colors shadow-soft hover:shadow-hover disabled:opacity-60"
+            >
+              <span className={`material-symbols-outlined text-[20px] ${syncing ? 'animate-spin' : ''}`}>
+                sync
+              </span>
+              {syncing ? 'Syncing...' : 'Sync from Drive'}
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -117,6 +148,12 @@ export default function Documents() {
         {error && (
           <div className="mb-6 px-4 py-3 rounded-lg bg-error-container/40 border border-error/30 text-error font-label-sm text-label-sm">
             {error}
+          </div>
+        )}
+
+        {syncMessage && (
+          <div className="mb-6 px-4 py-3 rounded-lg bg-success/10 border border-success/30 text-success font-label-sm text-label-sm">
+            Drive sync: {syncMessage}
           </div>
         )}
 

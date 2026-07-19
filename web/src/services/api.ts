@@ -68,4 +68,15 @@ export async function deleteDocument(filename: string): Promise<{ message: strin
   return data;
 }
 
+export interface DriveSyncResponse {
+  ingested: string[];
+  skipped: string[];
+  failed: string[];
+}
+
+export async function syncDrive(): Promise<DriveSyncResponse> {
+  const { data } = await api.post<DriveSyncResponse>('/documents/drive-sync');
+  return data;
+}
+
 export default api;
