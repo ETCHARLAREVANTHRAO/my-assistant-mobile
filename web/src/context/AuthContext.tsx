@@ -44,7 +44,7 @@ export function friendlyError(code: string): string {
     case 'auth/too-many-requests':
       return 'Too many attempts. Try again later.';
     default:
-      return 'Something went wrong. Please try again.';
+      return `Something went wrong. Please try again. (${code})`;
   }
 }
 
