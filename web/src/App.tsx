@@ -14,6 +14,7 @@ import Progress from './pages/Progress';
 import Settings from './pages/Settings';
 import Account from './pages/Account';
 import UsageDashboard from './pages/UsageDashboard';
+import AdminDriveSync from './pages/AdminDriveSync';
 
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       <Route path="/usage" element={<ProtectedRoute><UsageDashboard /></ProtectedRoute>} />
+      <Route path="/admin/drive-sync" element={<ProtectedRoute><AdminDriveSync /></ProtectedRoute>} />
 
       <Route path="/" element={<RootRedirect />} />
       <Route path="*" element={<RootRedirect />} />
