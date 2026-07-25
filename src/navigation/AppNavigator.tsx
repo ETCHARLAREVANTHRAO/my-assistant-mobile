@@ -6,6 +6,7 @@ import DocumentsScreen from '../screens/DocumentsScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ExamScreen from '../screens/ExamScreen';
+import PYQScreen from '../screens/PYQScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,6 +39,11 @@ export default function AppNavigator() {
         name="Exam"
         component={ExamScreen}
         options={{ tabBarIcon: ({ color, size }) => <Ionicons name="school-outline" size={size} color={color} /> }}
+      />
+      <Tab.Screen
+        name="PYQ"
+        component={PYQScreen}
+        options={{ title: 'Mock Test', tabBarIcon: ({ color, size }) => <Ionicons name="clipboard-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="Profile"
