@@ -7,6 +7,7 @@ export type PageKey =
   | 'documents'
   | 'revision-planner'
   | 'quiz'
+  | 'pyq'
   | 'progress'
   | 'settings'
   | 'account'
@@ -24,13 +25,14 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'documents', label: 'Documents', icon: 'description', to: '/documents' },
   { key: 'revision-planner', label: 'Revision Planner', icon: 'event_note', to: '/revision-planner' },
   { key: 'quiz', label: 'Quiz', icon: 'quiz', to: '/quiz' },
+  { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'progress', label: 'Progress', icon: 'leaderboard', to: '/progress' },
 ];
 
 const MOBILE_NAV_ITEMS: NavItem[] = [
   { key: 'chat', label: 'Chat', icon: 'chat', to: '/chat' },
   { key: 'documents', label: 'Docs', icon: 'description', to: '/documents' },
-  { key: 'quiz', label: 'Quiz', icon: 'quiz', to: '/quiz' },
+  { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'account', label: 'Profile', icon: 'settings', to: '/account' },
 ];
 

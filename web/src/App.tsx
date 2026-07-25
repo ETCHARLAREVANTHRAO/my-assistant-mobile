@@ -10,6 +10,11 @@ import QuizSetup from './pages/QuizSetup';
 import QuizResults from './pages/QuizResults';
 import MockTestSession from './pages/MockTestSession';
 import MockTestResults from './pages/MockTestResults';
+import PYQHome from './pages/PYQHome';
+import PYQInstructions from './pages/PYQInstructions';
+import PYQSession from './pages/PYQSession';
+import PYQResult from './pages/PYQResult';
+import PYQReview from './pages/PYQReview';
 import Progress from './pages/Progress';
 import Settings from './pages/Settings';
 import Account from './pages/Account';
@@ -34,6 +39,11 @@ function AppRoutes() {
       <Route path="/quiz/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
       <Route path="/mock-test" element={<ProtectedRoute><MockTestSession /></ProtectedRoute>} />
       <Route path="/mock-test/results" element={<ProtectedRoute><MockTestResults /></ProtectedRoute>} />
+      <Route path="/pyq" element={<ProtectedRoute><PYQHome /></ProtectedRoute>} />
+      <Route path="/pyq/:paperId/instructions" element={<ProtectedRoute><PYQInstructions /></ProtectedRoute>} />
+      <Route path="/pyq/attempt/:attemptId" element={<ProtectedRoute><PYQSession /></ProtectedRoute>} />
+      <Route path="/pyq/result/:attemptId" element={<ProtectedRoute><PYQResult /></ProtectedRoute>} />
+      <Route path="/pyq/review/:attemptId" element={<ProtectedRoute><PYQReview /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
