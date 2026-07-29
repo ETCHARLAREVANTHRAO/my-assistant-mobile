@@ -10,6 +10,10 @@
     {
       "source": "/exam/:path*",
       "destination": "https://exam-rag-backend.onrender.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
