@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Modal, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { pyqAssetUrl, PYQResult, PYQQuestionResult } from '../../services/api';
+import { pyqApi, pyqAssetUrl, PYQResult, PYQQuestionResult } from '../../services/api';
 import { pyqColors as c } from './colors';
 
 interface Props {
@@ -29,7 +29,35 @@ export default function SolutionReview({ result, onBack }: Props) {
   const questions = result.questions;
   const [index, setIndex] = useState(0);
   const [gridVisible, setGridVisible] = useState(false);
+  const [explaining, setExplaining] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const q = questions[index];
+
+  async function askAiToExplain() {
+    setExplaining(true);
+    setAiExplanation(null);
+    try {
+      const explanation = await pyqApi.explainQuestion({
+        question: q.question,
+        options: q.options,
+        question_type: q.question_type,
+        correct_answer: q.correct_answer,
+        given_answer: q.given_answer,
+        topic: q.topic,
+        explanation: q.explanation,
+      });
+      setAiExplanation(explanation);
+    } catch {
+      Alert.alert('Could not get an explanation', 'Please check your connection and try again.');
+    } finally {
+      setExplaining(false);
+    }
+  }
+
+  function goToIndex(i: number) {
+    setIndex(i);
+    setAiExplanation(null);
+  }
 
   return (
     <View style={styles.screen}>
@@ -108,20 +136,34 @@ export default function SolutionReview({ result, onBack }: Props) {
             )}
           </View>
         )}
+
+        <TouchableOpacity style={styles.explainBtn} onPress={askAiToExplain} disabled={explaining}>
+          {explaining
+            ? <ActivityIndicator color={c.primary} size="small" />
+            : <Ionicons name="sparkles-outline" size={15} color={c.primary} />}
+          <Text style={styles.explainBtnText}>{explaining ? 'Asking AI…' : 'Explain with AI'}</Text>
+        </TouchableOpacity>
+
+        {aiExplanation && (
+          <View style={styles.aiBox}>
+            <Text style={styles.aiTitle}>AI Explanation</Text>
+            <Text style={styles.aiText}>{aiExplanation}</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.navBtn, index === 0 && styles.navBtnDisabled]}
           disabled={index === 0}
-          onPress={() => setIndex(i => i - 1)}
+          onPress={() => goToIndex(index - 1)}
         >
           <Text style={styles.navBtnText}>← Previous</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.navBtn, styles.navBtnPrimary, index === questions.length - 1 && styles.navBtnDisabled]}
           disabled={index === questions.length - 1}
-          onPress={() => setIndex(i => i + 1)}
+          onPress={() => goToIndex(index + 1)}
         >
           <Text style={styles.navBtnTextPrimary}>Next →</Text>
         </TouchableOpacity>
@@ -144,7 +186,7 @@ export default function SolutionReview({ result, onBack }: Props) {
                 <TouchableOpacity
                   key={qr.question_id}
                   style={[styles.gridCell, { backgroundColor: statusColor(qr.status) }, i === index && styles.gridCellCurrent]}
-                  onPress={() => { setIndex(i); setGridVisible(false); }}
+                  onPress={() => { goToIndex(i); setGridVisible(false); }}
                 >
                   <Text style={styles.gridCellText}>{i + 1}</Text>
                 </TouchableOpacity>
@@ -202,6 +244,11 @@ const styles = StyleSheet.create({
   stepText: { fontSize: 12, color: c.text, lineHeight: 18, marginBottom: 4 },
   metaRow: { flexDirection: 'row', gap: 16, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#bfe0ee' },
   metaText: { fontSize: 11, color: c.textMuted },
+  explainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, borderWidth: 1.5, borderColor: c.primary, borderRadius: 8, paddingVertical: 12 },
+  explainBtnText: { color: c.primary, fontWeight: '700', fontSize: 13 },
+  aiBox: { backgroundColor: c.amberBg, borderWidth: 1, borderColor: c.amberBorder, borderRadius: 8, padding: 14, marginTop: 10 },
+  aiTitle: { fontSize: 13, fontWeight: '800', color: c.amberText, marginBottom: 8 },
+  aiText: { fontSize: 13, color: c.text, lineHeight: 19 },
   footer: { flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: c.border },
   navBtn: { flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 6, paddingVertical: 12, alignItems: 'center' },
   navBtnPrimary: { backgroundColor: c.primary, borderColor: c.primary },

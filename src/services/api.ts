@@ -223,6 +223,64 @@ export interface PYQAttemptSummary {
   submitted_at: string;
 }
 
+export interface PracticeFilter {
+  topics?: string[];
+  sections?: string[];
+  difficulty?: string[];
+  count?: number;
+}
+
+export interface StreakInfo {
+  current_streak: number;
+  longest_streak: number;
+  completed_today: boolean;
+}
+
+export interface DailyPracticeResponse extends PYQAttemptStartResponse {
+  already_submitted: boolean;
+  streak: StreakInfo;
+}
+
+export interface TopicFrequency {
+  topic: string;
+  question_count: number;
+  total_marks: number;
+}
+
+export interface StatBucket {
+  key: string;
+  attempted: number;
+  correct: number;
+  incorrect: number;
+  unattempted: number;
+  accuracy: number;
+}
+
+export interface AnalyticsResponse {
+  total_attempts: number;
+  total_marks: number;
+  total_max_marks: number;
+  overall_accuracy: number;
+  correct: number;
+  incorrect: number;
+  unattempted: number;
+  topics: StatBucket[];
+  sections: StatBucket[];
+  difficulty: StatBucket[];
+  weak_topics: StatBucket[];
+  strong_topics: StatBucket[];
+}
+
+export interface ExplainRequest {
+  question: string;
+  options: Record<string, string> | null;
+  question_type: string;
+  correct_answer: string | string[];
+  given_answer: PYQAnswer;
+  topic: string | null;
+  explanation: string | null;
+}
+
 // image_url / option-image paths come back as "/pyq-assets/..." — resolve against
 // the same host the API client is already using.
 export const pyqAssetUrl = (path: string): string => `${BASE_URL}${path}`;
@@ -256,6 +314,31 @@ export const pyqApi = {
   listAttempts: async (): Promise<PYQAttemptSummary[]> => {
     const { data } = await api.get<PYQAttemptSummary[]>('/pyq/attempts');
     return data;
+  },
+
+  startPractice: async (filter: PracticeFilter): Promise<PYQAttemptStartResponse> => {
+    const { data } = await api.post<PYQAttemptStartResponse>('/pyq/practice/start', filter);
+    return data;
+  },
+
+  getDaily: async (): Promise<DailyPracticeResponse> => {
+    const { data } = await api.get<DailyPracticeResponse>('/pyq/daily');
+    return data;
+  },
+
+  getTopics: async (): Promise<TopicFrequency[]> => {
+    const { data } = await api.get<TopicFrequency[]>('/pyq/topics');
+    return data;
+  },
+
+  getAnalytics: async (): Promise<AnalyticsResponse> => {
+    const { data } = await api.get<AnalyticsResponse>('/pyq/analytics');
+    return data;
+  },
+
+  explainQuestion: async (payload: ExplainRequest): Promise<string> => {
+    const { data } = await api.post<{ explanation: string }>('/pyq/explain', payload);
+    return data.explanation;
   },
 };
 

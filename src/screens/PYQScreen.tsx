@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
-import { pyqApi, PYQAttemptStartResponse, PYQPaperSummary, PYQResult } from '../services/api';
+import { pyqApi, DailyPracticeResponse, PYQAttemptStartResponse, PYQPaperSummary, PYQResult, PracticeFilter } from '../services/api';
 import HomeScreen from './pyq/HomeScreen';
 import GeneralInstructions from './pyq/GeneralInstructions';
 import PaperInstructions from './pyq/PaperInstructions';
 import ExamPlayer from './pyq/ExamPlayer';
 import ResultScreen from './pyq/ResultScreen';
 import SolutionReview from './pyq/SolutionReview';
+import PracticeSetup from './pyq/PracticeSetup';
+import TopicsScreen from './pyq/TopicsScreen';
+import AnalyticsScreen from './pyq/AnalyticsScreen';
 
-type Step = 'home' | 'general' | 'paper_instructions' | 'exam' | 'result' | 'review';
+type Step = 'home' | 'general' | 'paper_instructions' | 'exam' | 'result' | 'review' | 'practice_setup' | 'topics' | 'analytics';
 
 export default function PYQScreen() {
   const [step, setStep] = useState<Step>('home');
@@ -16,6 +19,7 @@ export default function PYQScreen() {
   const [attempt, setAttempt] = useState<PYQAttemptStartResponse | null>(null);
   const [result, setResult] = useState<PYQResult | null>(null);
   const [starting, setStarting] = useState(false);
+  const [practiceTopic, setPracticeTopic] = useState<string | undefined>(undefined);
 
   function selectPaper(paper: PYQPaperSummary) {
     setSelectedPaper(paper);
@@ -46,6 +50,36 @@ export default function PYQScreen() {
     }
   }
 
+  async function startPractice(filter: PracticeFilter) {
+    setStarting(true);
+    try {
+      const a = await pyqApi.startPractice(filter);
+      setSelectedPaper(null);
+      setAttempt(a);
+      setStep('exam');
+    } catch (e: any) {
+      Alert.alert('Could not start practice', e?.response?.data?.detail || 'Please try again.');
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  async function startDaily(daily: DailyPracticeResponse) {
+    if (daily.already_submitted) {
+      try {
+        const r = await pyqApi.getResult(daily.attempt_id);
+        setResult(r);
+        setStep('result');
+      } catch {
+        Alert.alert("Could not load today's result", 'Please try again.');
+      }
+    } else {
+      setSelectedPaper(null);
+      setAttempt(daily);
+      setStep('exam');
+    }
+  }
+
   function handleSubmitted(r: PYQResult) {
     setResult(r);
     setAttempt(null);
@@ -54,20 +88,48 @@ export default function PYQScreen() {
 
   function retake() {
     setResult(null);
-    setStep('paper_instructions');
+    setStep(selectedPaper ? 'paper_instructions' : 'home');
   }
 
   function backToHome() {
     setSelectedPaper(null);
     setAttempt(null);
     setResult(null);
+    setPracticeTopic(undefined);
     setStep('home');
   }
 
   return (
     <View style={styles.container}>
       {step === 'home' && (
-        <HomeScreen onSelectPaper={selectPaper} onViewAttempt={viewPastAttempt} />
+        <HomeScreen
+          onSelectPaper={selectPaper}
+          onViewAttempt={viewPastAttempt}
+          onStartDaily={startDaily}
+          onOpenPracticeSetup={() => { setPracticeTopic(undefined); setStep('practice_setup'); }}
+          onOpenTopics={() => setStep('topics')}
+          onOpenAnalytics={() => setStep('analytics')}
+        />
+      )}
+
+      {step === 'practice_setup' && (
+        <PracticeSetup
+          onBack={backToHome}
+          onStart={startPractice}
+          starting={starting}
+          initialTopic={practiceTopic}
+        />
+      )}
+
+      {step === 'topics' && (
+        <TopicsScreen
+          onBack={backToHome}
+          onPracticeTopic={(topic) => { setPracticeTopic(topic); setStep('practice_setup'); }}
+        />
+      )}
+
+      {step === 'analytics' && (
+        <AnalyticsScreen onBack={backToHome} />
       )}
 
       {step === 'general' && selectedPaper && (
