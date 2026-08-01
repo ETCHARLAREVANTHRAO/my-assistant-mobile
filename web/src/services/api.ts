@@ -212,6 +212,49 @@ export async function pyqGetResult(attemptId: string): Promise<PYQResult> {
   return data;
 }
 
+
+export interface PracticeFilter {
+  subjects?: string[];
+  chapters?: string[];
+  topics?: string[];
+  sections?: string[];
+  difficulty?: string[];
+  question_types?: string[];
+  count?: number;
+}
+
+export interface PracticeOption {
+  name: string;
+  question_count: number;
+}
+
+export interface PracticeChapterOption extends PracticeOption {
+  subject: string;
+}
+
+export interface PracticeTopicOption extends PracticeOption {
+  subject: string;
+  chapter: string;
+}
+
+export interface PracticeTaxonomyResponse {
+  subjects: PracticeOption[];
+  chapters: PracticeChapterOption[];
+  topics: PracticeTopicOption[];
+  difficulty: PracticeOption[];
+  question_types: PracticeOption[];
+}
+
+export async function pyqGetPracticeTaxonomy(): Promise<PracticeTaxonomyResponse> {
+  const { data } = await api.get<PracticeTaxonomyResponse>('/pyq/practice/taxonomy');
+  return data;
+}
+
+export async function pyqStartPractice(filter: PracticeFilter): Promise<PYQAttemptStartResponse> {
+  const { data } = await api.post<PYQAttemptStartResponse>('/pyq/practice/start', filter);
+  return data;
+}
+
 export async function pyqListAttempts(): Promise<PYQAttemptSummary[]> {
   const { data } = await api.get<PYQAttemptSummary[]>('/pyq/attempts');
   return data;
