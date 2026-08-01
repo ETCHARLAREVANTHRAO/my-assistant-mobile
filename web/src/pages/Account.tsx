@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+﻿import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 
@@ -136,7 +136,19 @@ export default function Account() {
                 </div>
               </div>
             </div>
-            <div className="bg-surface-container rounded-2xl p-5 border border-border/50">
+                        <div className="bg-surface rounded-2xl p-5 border border-border shadow-soft">
+              <h3 className="font-label-md text-label-md text-text-muted uppercase tracking-wider mb-4">Admin</h3>
+              <div className="space-y-2">
+                <button onClick={() => navigate('/admin/content')} className="w-full flex items-center justify-between rounded-lg px-3 py-2 hover:bg-surface-container text-left">
+                  <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm">edit_note</span>Content Controls</span>
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+                <button onClick={() => navigate('/admin/drive-sync')} className="w-full flex items-center justify-between rounded-lg px-3 py-2 hover:bg-surface-container text-left">
+                  <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm">sync</span>Drive Sync</span>
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div><div className="bg-surface-container rounded-2xl p-5 border border-border/50">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-secondary mt-0.5">info</span>
                 <div>
@@ -151,3 +163,4 @@ export default function Account() {
     </Layout>
   );
 }
+

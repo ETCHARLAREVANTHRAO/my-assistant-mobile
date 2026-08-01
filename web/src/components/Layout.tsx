@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,6 +8,12 @@ export type PageKey =
   | 'learning'
   | 'doubts'
   | 'revision-planner'
+  | 'resources'
+  | 'ai'
+  | 'community'
+  | 'exam-info'
+  | 'motivation'
+  | 'revision'
   | 'quiz'
   | 'pyq'
   | 'progress'
@@ -28,9 +34,15 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'learning', label: 'Learning', icon: 'menu_book', to: '/learning' },
   { key: 'doubts', label: 'Doubts', icon: 'psychology_alt', to: '/doubts' },
   { key: 'revision-planner', label: 'Revision Planner', icon: 'event_note', to: '/revision-planner' },
+  { key: 'resources', label: 'Resources', icon: 'auto_stories', to: '/resources' },
   { key: 'quiz', label: 'Quiz', icon: 'quiz', to: '/quiz' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'progress', label: 'Progress', icon: 'leaderboard', to: '/progress' },
+  { key: 'ai', label: 'AI', icon: 'auto_awesome', to: '/ai' },
+  { key: 'community', label: 'Community', icon: 'groups', to: '/community' },
+  { key: 'exam-info', label: 'Exam Info', icon: 'campaign', to: '/exam-info' },
+  { key: 'motivation', label: 'Motivation', icon: 'emoji_events', to: '/motivation' },
+  { key: 'revision', label: 'Revision', icon: 'event_repeat', to: '/revision' },
 ];
 
 const MOBILE_NAV_ITEMS: NavItem[] = [
@@ -39,6 +51,7 @@ const MOBILE_NAV_ITEMS: NavItem[] = [
   { key: 'learning', label: 'Learn', icon: 'menu_book', to: '/learning' },
   { key: 'doubts', label: 'Doubts', icon: 'psychology_alt', to: '/doubts' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
+  { key: 'resources', label: 'Resources', icon: 'auto_stories', to: '/resources' },
   { key: 'account', label: 'Profile', icon: 'settings', to: '/account' },
 ];
 
@@ -204,4 +217,8 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
     </div>
   );
 }
+
+
+
+
 

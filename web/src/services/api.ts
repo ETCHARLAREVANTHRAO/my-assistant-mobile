@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import { auth } from '../config/firebase';
 
 const API_URL =
@@ -102,7 +102,7 @@ export async function syncDrive(): Promise<DriveSyncResponse> {
   return data;
 }
 
-// ── GATE PYQ mock test ──────────────────────────────────────────────────────
+// â”€â”€ GATE PYQ mock test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface PYQSectionSummary {
   section: string;
@@ -210,7 +210,7 @@ export interface PYQAttemptSummary {
   submitted_at: string;
 }
 
-// image_url / option-image paths come back as "/pyq-assets/..." — resolve against the API host.
+// image_url / option-image paths come back as "/pyq-assets/..." â€” resolve against the API host.
 export const pyqAssetUrl = (path: string): string => `${API_URL}${path}`;
 
 export async function pyqListPapers(): Promise<PYQPaperSummary[]> {
@@ -345,6 +345,248 @@ export async function pyqGetAnalytics(): Promise<AnalyticsResponse> {
   return data;
 }
 
+export interface StudyPlanTaskCreate {
+  title: string;
+  subject?: string;
+  topic?: string;
+  planned_date: string;
+  start_time?: string;
+  duration_minutes?: number;
+  priority?: string;
+  notes?: string;
+  reminder_enabled?: boolean;
+}
+
+export interface StudyPlanTaskUpdate {
+  title?: string;
+  subject?: string;
+  topic?: string;
+  planned_date?: string;
+  start_time?: string;
+  duration_minutes?: number;
+  priority?: string;
+  notes?: string;
+  reminder_enabled?: boolean;
+  completed?: boolean;
+}
+
+export interface StudyPlanTask {
+  task_id: string;
+  title: string;
+  subject: string;
+  topic: string;
+  planned_date: string;
+  start_time: string;
+  duration_minutes: number;
+  priority: string;
+  notes: string;
+  reminder_enabled: boolean;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudyPlannerSummary {
+  tasks: StudyPlanTask[];
+  today_key: string;
+  weekly_hours_goal: number;
+  weekly_completed_minutes: number;
+  weekly_planned_minutes: number;
+  completion_rate: number;
+  current_streak: number;
+  longest_streak: number;
+  completed_today: boolean;
+  revision_reminders: StudyPlanTask[];
+}
+
+export async function plannerGetSummary(): Promise<StudyPlannerSummary> {
+  const { data } = await api.get<StudyPlannerSummary>('/planner/summary');
+  return data;
+}
+
+export async function plannerCreateTask(input: StudyPlanTaskCreate): Promise<StudyPlanTask> {
+  const { data } = await api.post<StudyPlanTask>('/planner/tasks', input);
+  return data;
+}
+
+export async function plannerUpdateTask(taskId: string, input: StudyPlanTaskUpdate): Promise<StudyPlanTask> {
+  const { data } = await api.patch<StudyPlanTask>(`/planner/tasks/${taskId}`, input);
+  return data;
+}
+
+export async function plannerCompleteTask(taskId: string): Promise<StudyPlanTask> {
+  const { data } = await api.post<StudyPlanTask>(`/planner/tasks/${taskId}/complete`);
+  return data;
+}
+
+export async function plannerDeleteTask(taskId: string): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(`/planner/tasks/${taskId}`);
+  return data;
+}
+
+export async function plannerSetGoal(weekly_hours_goal: number): Promise<StudyPlannerSummary> {
+  const { data } = await api.put<StudyPlannerSummary>('/planner/goal', { weekly_hours_goal });
+  return data;
+}
+export interface ResourceBookRecommendation {
+  subject: string;
+  title: string;
+  author: string;
+  use_for: string;
+}
+
+export interface ResourceFormulaSheet {
+  subject: string;
+  chapter: string;
+  formulas: string[];
+}
+
+export interface ResourceCheatSheet {
+  subject: string;
+  chapter: string;
+  points: string[];
+}
+
+export interface ResourceShortTrick {
+  subject: string;
+  title: string;
+  trick: string;
+  example: string;
+}
+
+export interface ResourcePYQSolution {
+  paper_id: string;
+  paper_title: string;
+  question_id: string;
+  subject: string | null;
+  chapter: string | null;
+  topic: string | null;
+  difficulty: string | null;
+  question_type: 'MCQ' | 'MSQ' | 'NAT';
+  marks: number;
+  question: string;
+  options: Record<string, string> | null;
+  image_url: string | null;
+  correct_answer: string | string[];
+  explanation: string | null;
+  solution_steps: string[] | null;
+}
+
+export interface ErrorNotebookItem {
+  notebook_id: string;
+  attempt_id: string;
+  paper_id: string;
+  paper_title: string;
+  submitted_at: string;
+  question_id: string;
+  subject: string | null;
+  chapter: string | null;
+  topic: string | null;
+  difficulty: string | null;
+  question_type: 'MCQ' | 'MSQ' | 'NAT';
+  marks: number;
+  marks_awarded: number;
+  time_spent_seconds: number;
+  question: string;
+  options: Record<string, string> | null;
+  image_url: string | null;
+  given_answer: string | string[] | null;
+  correct_answer: string | string[];
+  explanation: string | null;
+  solution_steps: string[] | null;
+  resolved: boolean;
+  status: string;
+  note: string;
+}
+
+export interface ResourcesSummaryResponse {
+  pyq_solutions: ResourcePYQSolution[];
+  formula_sheets: ResourceFormulaSheet[];
+  cheat_sheets: ResourceCheatSheet[];
+  short_tricks: ResourceShortTrick[];
+  error_notebook: ErrorNotebookItem[];
+}
+
+export async function resourcesGetSummary(): Promise<ResourcesSummaryResponse> {
+  const { data } = await api.get<ResourcesSummaryResponse>('/resources/summary');
+  return data;
+}
+
+export async function resourcesUpdateErrorNotebook(
+  notebookId: string,
+  input: { resolved?: boolean; note?: string },
+): Promise<ResourcesSummaryResponse> {
+  const { data } = await api.patch<ResourcesSummaryResponse>(`/resources/error-notebook/${encodeURIComponent(notebookId)}`, input);
+  return data;
+}
+export async function aiTutor(input: { topic: string; level?: string }): Promise<{ answer: string }> {
+  const { data } = await api.post<{ answer: string }>('/ai/tutor', input);
+  return data;
+}
+
+export async function aiQuizGenerator(input: { topic: string; count?: number; difficulty?: string }): Promise<{ answer: string }> {
+  const { data } = await api.post<{ answer: string }>('/ai/quiz-generator', input);
+  return data;
+}
+
+export async function aiExamMentor(input: { concern: string }): Promise<{ answer: string }> {
+  const { data } = await api.post<{ answer: string }>('/ai/exam-mentor', input);
+  return data;
+}
+
+export async function aiRevisionPlan(input: { days: number; target: string }): Promise<{ answer: string }> {
+  const { data } = await api.post<{ answer: string }>('/ai/revision-plan', input);
+  return data;
+}
+
+export async function getExamInfo(): Promise<any> {
+  const { data } = await api.get('/exam-info');
+  return data;
+}
+
+export async function getMotivation(): Promise<any> {
+  const { data } = await api.get('/motivation');
+  return data;
+}
+
+export async function getRevision(): Promise<any> {
+  const { data } = await api.get('/revision');
+  return data;
+}
+
+export async function getCommunity(): Promise<any> {
+  const { data } = await api.get('/community');
+  return data;
+}
+
+export async function createCommunityPost(input: { title: string; content: string; category?: string }): Promise<any> {
+  const { data } = await api.post('/community/posts', input);
+  return data;
+}
+export interface AdminContentPayload {
+  formula_sheets: ResourceFormulaSheet[];
+  cheat_sheets: ResourceCheatSheet[];
+  book_recommendations: ResourceBookRecommendation[];
+  short_tricks: ResourceShortTrick[];
+  exam_info: any;
+  mentor_sessions: Array<{ title: string; status: string }>;
+}
+
+export async function adminGetContent(): Promise<AdminContentPayload> {
+  const { data } = await api.get<AdminContentPayload>('/admin/content');
+  return data;
+}
+
+export async function adminSaveContent(input: Partial<AdminContentPayload>): Promise<AdminContentPayload> {
+  const { data } = await api.put<AdminContentPayload>('/admin/content', input);
+  return data;
+}
+
+export async function adminResetContent(): Promise<AdminContentPayload> {
+  const { data } = await api.post<AdminContentPayload>('/admin/content/reset');
+  return data;
+}
 export default api;
 
 // Learning syllabus
@@ -392,3 +634,9 @@ export async function learningGetSubject(subjectSlug: string): Promise<LearningS
   const { data } = await api.get<LearningSubjectDetail>(`/learning/subjects/${subjectSlug}`);
   return data;
 }
+
+
+
+
+
+

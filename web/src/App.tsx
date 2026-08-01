@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -8,6 +8,12 @@ import Documents from './pages/Documents';
 import Learning from './pages/Learning';
 import Doubts from './pages/Doubts';
 import RevisionPlanner from './pages/RevisionPlanner';
+import Resources from './pages/Resources';
+import AIFeatures from './pages/AIFeatures';
+import Community from './pages/Community';
+import ExamInfo from './pages/ExamInfo';
+import Motivation from './pages/Motivation';
+import Revision from './pages/Revision';
 import QuizSetup from './pages/QuizSetup';
 import QuizResults from './pages/QuizResults';
 import MockTestSession from './pages/MockTestSession';
@@ -22,6 +28,7 @@ import Settings from './pages/Settings';
 import Account from './pages/Account';
 import UsageDashboard from './pages/UsageDashboard';
 import AdminDriveSync from './pages/AdminDriveSync';
+import AdminContent from './pages/AdminContent';
 
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
@@ -39,6 +46,12 @@ function AppRoutes() {
       <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
       <Route path="/doubts" element={<ProtectedRoute><Doubts /></ProtectedRoute>} />
       <Route path="/revision-planner" element={<ProtectedRoute><RevisionPlanner /></ProtectedRoute>} />
+      <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+      <Route path="/ai" element={<ProtectedRoute><AIFeatures /></ProtectedRoute>} />
+      <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+      <Route path="/exam-info" element={<ProtectedRoute><ExamInfo /></ProtectedRoute>} />
+      <Route path="/motivation" element={<ProtectedRoute><Motivation /></ProtectedRoute>} />
+      <Route path="/revision" element={<ProtectedRoute><Revision /></ProtectedRoute>} />
       <Route path="/quiz" element={<ProtectedRoute><QuizSetup /></ProtectedRoute>} />
       <Route path="/quiz/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
       <Route path="/mock-test" element={<ProtectedRoute><MockTestSession /></ProtectedRoute>} />
@@ -53,6 +66,7 @@ function AppRoutes() {
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       <Route path="/usage" element={<ProtectedRoute><UsageDashboard /></ProtectedRoute>} />
       <Route path="/admin/drive-sync" element={<ProtectedRoute><AdminDriveSync /></ProtectedRoute>} />
+      <Route path="/admin/content" element={<ProtectedRoute><AdminContent /></ProtectedRoute>} />
 
       <Route path="/" element={<RootRedirect />} />
       <Route path="*" element={<RootRedirect />} />
@@ -71,4 +85,10 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
 
