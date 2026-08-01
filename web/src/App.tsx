@@ -29,6 +29,7 @@ import Account from './pages/Account';
 import UsageDashboard from './pages/UsageDashboard';
 import AdminDriveSync from './pages/AdminDriveSync';
 import AdminContent from './pages/AdminContent';
+import AdminDashboard from './pages/AdminDashboard';
 
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
@@ -67,6 +68,7 @@ function AppRoutes() {
       <Route path="/usage" element={<ProtectedRoute><UsageDashboard /></ProtectedRoute>} />
       <Route path="/admin/drive-sync" element={<ProtectedRoute><AdminDriveSync /></ProtectedRoute>} />
       <Route path="/admin/content" element={<ProtectedRoute><AdminContent /></ProtectedRoute>} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
       <Route path="/" element={<RootRedirect />} />
       <Route path="*" element={<RootRedirect />} />
@@ -85,6 +87,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 

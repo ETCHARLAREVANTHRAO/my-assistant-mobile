@@ -139,6 +139,10 @@ export default function Account() {
                         <div className="bg-surface rounded-2xl p-5 border border-border shadow-soft">
               <h3 className="font-label-md text-label-md text-text-muted uppercase tracking-wider mb-4">Admin</h3>
               <div className="space-y-2">
+                <button onClick={() => navigate('/admin/dashboard')} className="w-full flex items-center justify-between rounded-lg px-3 py-2 hover:bg-surface-container text-left">
+                  <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm">dashboard</span>Admin Dashboard</span>
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
                 <button onClick={() => navigate('/admin/content')} className="w-full flex items-center justify-between rounded-lg px-3 py-2 hover:bg-surface-container text-left">
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm">edit_note</span>Content Controls</span>
                   <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -163,4 +167,6 @@ export default function Account() {
     </Layout>
   );
 }
+
+
 

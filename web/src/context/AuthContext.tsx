@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useContext,
   useEffect,
@@ -15,6 +15,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { activityPing } from '../services/api';
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -55,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (user) {
+        activityPing({ email: user.email ?? '', display_name: user.displayName ?? '' }).catch(() => {});
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -94,3 +98,6 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
 }
+
+
+

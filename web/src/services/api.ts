@@ -587,6 +587,57 @@ export async function adminResetContent(): Promise<AdminContentPayload> {
   const { data } = await api.post<AdminContentPayload>('/admin/content/reset');
   return data;
 }
+export interface AdminDashboardUser {
+  user_id: string;
+  email: string;
+  display_name: string;
+  created_at: string | null;
+  last_active_at: string | null;
+  documents: number;
+  storage_bytes: number;
+  attempts: number;
+  submitted_attempts: number;
+  planner_tasks: number;
+  completed_planner_tasks: number;
+  daily_messages: number;
+  monthly_tokens: number;
+}
+
+export interface AdminDashboardResponse {
+  generated_at: string;
+  users: {
+    total: number;
+    tracked_profiles: number;
+    new_today: number;
+    new_7d: number;
+    new_30d: number;
+    active_today: number;
+    active_7d: number;
+    active_30d: number;
+  };
+  activity: {
+    documents: number;
+    storage_bytes: number;
+    pyq_attempts: number;
+    submitted_attempts: number;
+    planner_tasks: number;
+    completed_planner_tasks: number;
+    community_posts: number;
+    daily_messages: number;
+    monthly_tokens: number;
+  };
+  recent_users: AdminDashboardUser[];
+}
+
+export async function activityPing(input: { email?: string; display_name?: string }): Promise<{ status: string }> {
+  const { data } = await api.post<{ status: string }>('/usage/activity', input);
+  return data;
+}
+
+export async function adminGetDashboard(): Promise<AdminDashboardResponse> {
+  const { data } = await api.get<AdminDashboardResponse>('/admin/dashboard');
+  return data;
+}
 export default api;
 
 // Learning syllabus
@@ -634,6 +685,7 @@ export async function learningGetSubject(subjectSlug: string): Promise<LearningS
   const { data } = await api.get<LearningSubjectDetail>(`/learning/subjects/${subjectSlug}`);
   return data;
 }
+
 
 
 
