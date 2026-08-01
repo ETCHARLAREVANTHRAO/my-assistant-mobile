@@ -218,3 +218,49 @@ export async function pyqListAttempts(): Promise<PYQAttemptSummary[]> {
 }
 
 export default api;
+
+// Learning syllabus
+
+export interface VideoLecture {
+  title: string;
+  provider: string;
+  url: string;
+  embed_url: string | null;
+  duration_minutes: number | null;
+}
+
+export interface LearningTopic {
+  slug: string;
+  title: string;
+  priority: number;
+  status: string;
+  concepts: string[];
+  written_notes: string;
+  revision_summary: string;
+  formula_sheet: string[];
+  mind_map: string[];
+  pyq_concepts: string[];
+  video_lectures: VideoLecture[];
+}
+
+export interface LearningSubjectSummary {
+  slug: string;
+  name: string;
+  exam_weight: string;
+  description: string;
+  topic_count: number;
+}
+
+export interface LearningSubjectDetail extends LearningSubjectSummary {
+  topics: LearningTopic[];
+}
+
+export async function learningGetSyllabus(): Promise<LearningSubjectDetail[]> {
+  const { data } = await api.get<LearningSubjectDetail[]>('/learning/syllabus');
+  return data;
+}
+
+export async function learningGetSubject(subjectSlug: string): Promise<LearningSubjectDetail> {
+  const { data } = await api.get<LearningSubjectDetail>(`/learning/subjects/${subjectSlug}`);
+  return data;
+}

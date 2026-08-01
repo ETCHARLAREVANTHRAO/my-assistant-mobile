@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export type PageKey =
   | 'chat'
   | 'documents'
+  | 'learning'
   | 'revision-planner'
   | 'quiz'
   | 'pyq'
@@ -23,6 +24,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { key: 'chat', label: 'Chat', icon: 'chat', to: '/chat' },
   { key: 'documents', label: 'Documents', icon: 'description', to: '/documents' },
+  { key: 'learning', label: 'Learning', icon: 'menu_book', to: '/learning' },
   { key: 'revision-planner', label: 'Revision Planner', icon: 'event_note', to: '/revision-planner' },
   { key: 'quiz', label: 'Quiz', icon: 'quiz', to: '/quiz' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
@@ -32,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
 const MOBILE_NAV_ITEMS: NavItem[] = [
   { key: 'chat', label: 'Chat', icon: 'chat', to: '/chat' },
   { key: 'documents', label: 'Docs', icon: 'description', to: '/documents' },
+  { key: 'learning', label: 'Learn', icon: 'menu_book', to: '/learning' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'account', label: 'Profile', icon: 'settings', to: '/account' },
 ];
@@ -198,3 +201,4 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
     </div>
   );
 }
+

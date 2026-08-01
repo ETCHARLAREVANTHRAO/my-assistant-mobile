@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Chat from './pages/Chat';
 import Documents from './pages/Documents';
+import Learning from './pages/Learning';
 import RevisionPlanner from './pages/RevisionPlanner';
 import QuizSetup from './pages/QuizSetup';
 import QuizResults from './pages/QuizResults';
@@ -34,6 +35,7 @@ function AppRoutes() {
 
       <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+      <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
       <Route path="/revision-planner" element={<ProtectedRoute><RevisionPlanner /></ProtectedRoute>} />
       <Route path="/quiz" element={<ProtectedRoute><QuizSetup /></ProtectedRoute>} />
       <Route path="/quiz/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
@@ -67,3 +69,4 @@ function App() {
 }
 
 export default App;
+
