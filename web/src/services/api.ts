@@ -35,6 +35,29 @@ export async function sendChatMessage(
   return data;
 }
 
+
+export interface DoubtSolveResponse {
+  answer: string;
+  extracted_text: string;
+}
+
+export async function solveDoubt(input: {
+  message: string;
+  subject?: string;
+  topic?: string;
+  file?: File | null;
+}): Promise<DoubtSolveResponse> {
+  const form = new FormData();
+  form.append('message', input.message);
+  form.append('subject', input.subject ?? '');
+  form.append('topic', input.topic ?? '');
+  if (input.file) form.append('file', input.file);
+  const { data } = await api.post<DoubtSolveResponse>('/doubts/solve', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
 export interface DocumentsResponse {
   documents: string[];
   used_bytes: number;
@@ -84,6 +107,8 @@ export async function syncDrive(): Promise<DriveSyncResponse> {
 export interface PYQSectionSummary {
   section: string;
   section_title: string;
+  subject: string | null;
+  chapter: string | null;
   question_count: number;
   total_marks: number;
 }
@@ -128,6 +153,8 @@ export interface PYQQuestionResult {
   question_id: string;
   section: string;
   section_title: string;
+  subject: string | null;
+  chapter: string | null;
   question_type: 'MCQ' | 'MSQ' | 'NAT';
   marks: number;
   negative_marking: number;
@@ -135,6 +162,7 @@ export interface PYQQuestionResult {
   correct_answer: string | string[];
   status: 'correct' | 'incorrect' | 'unattempted';
   marks_awarded: number;
+  time_spent_seconds: number;
   question: string;
   options: Record<string, string> | null;
   image_url: string | null;
@@ -148,6 +176,7 @@ export interface PYQSectionResult {
   section: string;
   section_title: string;
   total_questions: number;
+  time_spent_seconds: number;
   attempted: number;
   correct: number;
   incorrect: number;
@@ -202,8 +231,9 @@ export async function pyqStartAttempt(paperId: string): Promise<PYQAttemptStartR
 export async function pyqSubmitAttempt(
   attemptId: string,
   answers: Record<string, PYQAnswer>,
+  time_spent_seconds: Record<string, number> = {},
 ): Promise<PYQResult> {
-  const { data } = await api.post<PYQResult>(`/pyq/attempts/${attemptId}/submit`, { answers });
+  const { data } = await api.post<PYQResult>(`/pyq/attempts/${attemptId}/submit`, { answers, time_spent_seconds });
   return data;
 }
 
@@ -257,6 +287,61 @@ export async function pyqStartPractice(filter: PracticeFilter): Promise<PYQAttem
 
 export async function pyqListAttempts(): Promise<PYQAttemptSummary[]> {
   const { data } = await api.get<PYQAttemptSummary[]>('/pyq/attempts');
+  return data;
+}
+
+
+export interface StatBucket {
+  key: string;
+  attempted: number;
+  correct: number;
+  incorrect: number;
+  unattempted: number;
+  accuracy: number;
+  total_time_seconds: number;
+  avg_time_seconds: number;
+}
+
+export interface ImprovementPoint {
+  submitted_at: string;
+  paper_title: string;
+  total_marks: number;
+  max_marks: number;
+  accuracy: number;
+}
+
+export interface TimeManagementSummary {
+  total_time_seconds: number;
+  avg_time_per_attempted_seconds: number;
+  fastest_correct_seconds: number | null;
+  slowest_incorrect_seconds: number | null;
+  overtime_questions: number;
+}
+
+export interface AnalyticsResponse {
+  total_attempts: number;
+  total_marks: number;
+  total_max_marks: number;
+  overall_accuracy: number;
+  correct: number;
+  incorrect: number;
+  unattempted: number;
+  topics: StatBucket[];
+  subjects: StatBucket[];
+  chapters: StatBucket[];
+  sections: StatBucket[];
+  difficulty: StatBucket[];
+  weak_topics: StatBucket[];
+  strong_topics: StatBucket[];
+  improvement_graph: ImprovementPoint[];
+  time_management: TimeManagementSummary;
+  rank_prediction: string | null;
+  percentile_prediction: number | null;
+  personalized_study_plan: string[];
+}
+
+export async function pyqGetAnalytics(): Promise<AnalyticsResponse> {
+  const { data } = await api.get<AnalyticsResponse>('/pyq/analytics');
   return data;
 }
 

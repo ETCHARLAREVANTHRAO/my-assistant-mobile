@@ -105,12 +105,22 @@ function PYQSessionInner({ attempt }: { attempt: PYQAttemptStartResponse }) {
 
   const answersRef = useRef(answers);
   answersRef.current = answers;
+  const timeSpentRef = useRef<Record<string, number>>({});
+  const questionStartedAtRef = useRef(Date.now());
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const autoSubmittedRef = useRef(false);
   const submittingRef = useRef(false);
 
   const currentQ: PYQQuestion = questions[currentIndex];
+
+  function recordCurrentQuestionTime() {
+    const qid = currentQ?.question_id;
+    if (!qid) return;
+    const elapsed = Math.max(0, Math.round((Date.now() - questionStartedAtRef.current) / 1000));
+    timeSpentRef.current[qid] = (timeSpentRef.current[qid] ?? 0) + elapsed;
+    questionStartedAtRef.current = Date.now();
+  }
 
   useEffect(() => {
     const existing = answersRef.current[currentQ.question_id];
@@ -144,6 +154,7 @@ function PYQSessionInner({ attempt }: { attempt: PYQAttemptStartResponse }) {
   });
 
   function goTo(index: number) {
+    recordCurrentQuestionTime();
     setCurrentIndex(index);
     setVisited((prev) => new Set(prev).add(questions[index].question_id));
   }
@@ -186,8 +197,9 @@ function PYQSessionInner({ attempt }: { attempt: PYQAttemptStartResponse }) {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      recordCurrentQuestionTime();
       const finalAnswers = { ...answersRef.current, [currentQ.question_id]: draftRef.current };
-      const result = await pyqSubmitAttempt(attempt.attempt_id, finalAnswers);
+      const result = await pyqSubmitAttempt(attempt.attempt_id, finalAnswers, timeSpentRef.current);
       navigate(`/pyq/result/${result.attempt_id}`, { replace: true, state: { result } });
     } catch {
       setSubmitError('Could not submit your exam. Please check your connection and try again.');
