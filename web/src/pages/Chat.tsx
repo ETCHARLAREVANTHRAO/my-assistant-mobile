@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import Layout from '../components/Layout';
 import { sendChatMessage } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
   id: string;
@@ -16,10 +17,32 @@ const PROMPT_SUGGESTIONS = [
 ];
 
 export default function Chat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { currentUser } = useAuth();
+  const storageKey = `chatHistory:${currentUser?.uid ?? 'anonymous'}`;
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      setMessages(saved ? JSON.parse(saved) : []);
+    } catch {
+      setMessages([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, storageKey]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,7 +86,7 @@ export default function Chat() {
 
   return (
     <Layout activePage="chat">
-      <div className="flex flex-col h-full relative">
+      <div className="flex flex-col h-full relative bg-background text-on-background">
         {/* Chat Canvas */}
         <div className="flex-1 overflow-y-auto px-4 pb-[140px] scroll-smooth">
           <div className="max-w-[900px] mx-auto flex flex-col gap-stack-lg py-stack-md">
@@ -155,6 +178,17 @@ export default function Chat() {
                 onKeyDown={handleKeyDown}
               />
               <div className="absolute right-2 bottom-2 flex items-center gap-2">
+                {messages.length > 0 && (
+                  <button
+                    className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-surface-container-low disabled:opacity-50"
+                    title="New chat"
+                    type="button"
+                    onClick={() => setMessages([])}
+                    disabled={loading}
+                  >
+                    <span className="material-symbols-outlined">edit_square</span>
+                  </button>
+                )}
                 <button
                   className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-surface-container-low"
                   title="Attach Document"

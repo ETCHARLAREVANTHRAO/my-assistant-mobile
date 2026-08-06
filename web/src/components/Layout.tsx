@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -73,7 +73,7 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
   return (
     <div className="flex h-screen w-full bg-background text-on-background font-body-md text-body-md antialiased overflow-hidden">
       {/* SideNavBar (Desktop Only) */}
-      <aside className="hidden md:flex flex-col bg-surface dark:bg-inverse-surface shadow-sm h-full w-64 z-40 shrink-0 py-margin-desktop px-4 border-r border-border fixed left-0 top-0">
+      <aside className="hidden md:flex flex-col bg-surface dark:bg-inverse-surface shadow-sm h-full w-64 z-40 shrink-0 py-margin-desktop px-4 border-r border-border fixed left-0 top-0 min-h-0">
         <div className="flex items-center gap-3 mb-stack-lg px-2">
           <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-white font-bold text-lg shadow-soft">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -87,7 +87,7 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
             <p className="font-label-sm text-label-sm text-text-muted">GATE CS Aspirant</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 sidebar-scroll">
           {NAV_ITEMS.map((item) => {
             const active = item.key === activePage;
             return (
@@ -111,7 +111,7 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
             );
           })}
         </nav>
-        <div className="mt-auto space-y-1">
+        <div className="mt-stack-md space-y-1 shrink-0 border-t border-border/60 pt-stack-sm">
           <Link
             to="/settings"
             className={
@@ -141,7 +141,7 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative h-full overflow-hidden md:ml-64">
+      <div className="flex-1 flex flex-col relative h-full overflow-hidden md:ml-64 bg-background text-on-background">
         {/* TopNavBar */}
         <header className="fixed top-0 right-0 left-0 md:left-64 z-30 flex justify-between items-center px-gutter py-4 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl shadow-sm border-b border-border/50">
           <div className="flex items-center gap-4 md:hidden">
@@ -185,7 +185,7 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
         </header>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto pt-[80px] pb-20 md:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto pt-[80px] pb-20 md:pb-0 bg-background text-on-background">{children}</main>
 
         {/* Bottom Nav for Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface dark:bg-inverse-surface border-t border-border flex justify-around items-center h-16 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
