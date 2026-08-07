@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MessageBubble from '../components/MessageBubble';
-import { chatApi } from '../services/api';
+import { chatApi, KnowledgeMode } from '../services/api';
 
 interface Message {
   id: string;
@@ -14,6 +14,11 @@ interface Message {
   isUser: boolean;
   sources?: string[];
 }
+const knowledgeModes: Array<{ key: KnowledgeMode; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  { key: 'server', label: 'GATE Library', icon: 'cloud-outline' },
+  { key: 'local', label: 'My Docs', icon: 'document-text-outline' },
+  { key: 'hybrid', label: 'Best Answer', icon: 'layers-outline' },
+];
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([
@@ -21,6 +26,7 @@ export default function ChatScreen() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeMode>('hybrid');
   const listRef = useRef<FlatList>(null);
 
   const send = async () => {
@@ -33,7 +39,7 @@ export default function ChatScreen() {
     setLoading(true);
 
     try {
-      const res = await chatApi.send(text);
+      const res = await chatApi.send(text, knowledgeMode);
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         text: res.reply,
@@ -59,6 +65,26 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={90}
       >
+        <View style={styles.modeBar}>
+          {knowledgeModes.map(mode => {
+            const active = mode.key === knowledgeMode;
+            return (
+              <TouchableOpacity
+                key={mode.key}
+                style={[styles.modeBtn, active && styles.modeBtnActive]}
+                onPress={() => setKnowledgeMode(mode.key)}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Ionicons name={mode.icon} size={15} color={active ? '#fff' : '#aaaad0'} />
+                <Text style={[styles.modeText, active && styles.modeTextActive]} numberOfLines={1}>
+                  {mode.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
         <FlatList
           ref={listRef}
           data={messages}
@@ -93,6 +119,31 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a2e' },
   flex: { flex: 1 },
+  modeBar: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a3e',
+  },
+  modeBtn: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#383850',
+    backgroundColor: '#222238',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 6,
+  },
+  modeBtnActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
+  modeText: { color: '#aaaad0', fontSize: 12, fontWeight: '600' },
+  modeTextActive: { color: '#fff' },
   list: { paddingVertical: 12 },
   loader: { marginVertical: 8 },
   inputRow: {

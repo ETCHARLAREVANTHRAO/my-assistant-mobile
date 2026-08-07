@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
-// Web: route through Vercel proxy (/backend → Render) — no CORS needed
+// Web: route through Vercel proxy (/backend to Render) - no CORS needed
 // Mobile: call Render directly
 const RENDER_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://my-assistant-backend-nxwg.onrender.com';
 export const BASE_URL = Platform.OS === 'web' ? '/backend' : RENDER_URL;
@@ -18,14 +18,17 @@ api.interceptors.request.use(async (config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   } catch {
-    // Firebase not ready — proceed without auth header
+    // Firebase not ready - proceed without auth header
   }
   return config;
 });
 
+export type KnowledgeMode = 'server' | 'local' | 'hybrid';
+
 export interface ChatResponse {
   reply: string;
   sources: string[];
+  knowledge_mode: KnowledgeMode;
 }
 
 export interface WeatherData {
@@ -39,8 +42,8 @@ export interface WeatherData {
 }
 
 export const chatApi = {
-  send: async (message: string): Promise<ChatResponse> => {
-    const { data } = await api.post<ChatResponse>('/chat', { message });
+  send: async (message: string, knowledge_mode: KnowledgeMode = 'hybrid'): Promise<ChatResponse> => {
+    const { data } = await api.post<ChatResponse>('/chat', { message, knowledge_mode });
     return data;
   },
 };
@@ -75,7 +78,7 @@ export const documentsApi = {
       try {
         res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
       } catch (netErr: any) {
-        throw new Error('Network error — could not reach server: ' + (netErr.message ?? 'Failed to fetch'));
+        throw new Error('Network error - could not reach server: ' + (netErr.message ?? 'Failed to fetch'));
       }
 
       if (!res.ok) {
@@ -121,7 +124,7 @@ export const signOut = async () => {
   await auth.signOut();
 };
 
-// ── GATE PYQ mock test ──────────────────────────────────────────────────────
+// GATE PYQ mock test
 
 export interface PYQSectionSummary {
   section: string;
@@ -281,7 +284,7 @@ export interface ExplainRequest {
   explanation: string | null;
 }
 
-// image_url / option-image paths come back as "/pyq-assets/..." — resolve against
+// image_url / option-image paths come back as "/pyq-assets/..." - resolve against
 // the same host the API client is already using.
 export const pyqAssetUrl = (path: string): string => `${BASE_URL}${path}`;
 
@@ -342,7 +345,7 @@ export const pyqApi = {
   },
 };
 
-// ── Exam RAG backend ──────────────────────────────────────────────────────────
+// Exam RAG backend
 const EXAM_URL = Platform.OS === 'web' ? '/exam' : 'https://exam-rag-backend.onrender.com';
 
 export interface ExamChatResponse {

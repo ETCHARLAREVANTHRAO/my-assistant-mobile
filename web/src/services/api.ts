@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { auth } from '../config/firebase';
 
 const API_URL =
@@ -19,18 +19,23 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+export type KnowledgeMode = 'server' | 'local' | 'hybrid';
+
 export interface ChatResponse {
   reply: string;
   sources: string[];
+  knowledge_mode: KnowledgeMode;
 }
 
 export async function sendChatMessage(
   message: string,
   sessionId?: string,
+  knowledgeMode: KnowledgeMode = 'hybrid',
 ): Promise<ChatResponse> {
   const { data } = await api.post<ChatResponse>('/chat', {
     message,
     session_id: sessionId,
+    knowledge_mode: knowledgeMode,
   });
   return data;
 }
@@ -685,10 +690,3 @@ export async function learningGetSubject(subjectSlug: string): Promise<LearningS
   const { data } = await api.get<LearningSubjectDetail>(`/learning/subjects/${subjectSlug}`);
   return data;
 }
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import Layout from '../components/Layout';
-import { sendChatMessage } from '../services/api';
+import { sendChatMessage, type KnowledgeMode } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
@@ -10,8 +10,23 @@ interface ChatMessage {
   sources?: string[];
 }
 
+const KNOWLEDGE_MODES: Array<{
+  key: KnowledgeMode;
+  label: string;
+  icon: string;
+}> = [
+  { key: 'server', label: 'GATE Library', icon: 'cloud' },
+  { key: 'local', label: 'My Docs', icon: 'description' },
+  { key: 'hybrid', label: 'Best Answer', icon: 'layers' },
+];
+
+const MODE_LOADING_TEXT: Record<KnowledgeMode, string> = {
+  server: 'Searching GATE Library...',
+  local: 'Searching your documents...',
+  hybrid: 'Searching all study sources...',
+};
 const PROMPT_SUGGESTIONS = [
-  'Ask me anything from your notes',
+  'Ask the GATE Library or your own notes',
   'Try: explain B+ trees from my DBMS notes',
   'Summarize the key points of my OS chapter on deadlocks',
 ];
@@ -29,6 +44,7 @@ export default function Chat() {
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeMode>('hybrid');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,7 +74,7 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      const res = await sendChatMessage(text);
+      const res = await sendChatMessage(text, undefined, knowledgeMode);
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -88,7 +104,7 @@ export default function Chat() {
     <Layout activePage="chat">
       <div className="flex flex-col h-full relative bg-background text-on-background">
         {/* Chat Canvas */}
-        <div className="flex-1 overflow-y-auto px-4 pb-[140px] scroll-smooth">
+        <div className="flex-1 overflow-y-auto px-4 pb-[190px] scroll-smooth">
           <div className="max-w-[900px] mx-auto flex flex-col gap-stack-lg py-stack-md">
             {messages.length === 0 && !loading && (
               <div className="flex flex-col items-center justify-center text-center gap-4 py-24">
@@ -96,7 +112,7 @@ export default function Chat() {
                   <span className="material-symbols-outlined text-primary text-3xl">psychology</span>
                 </div>
                 <h2 className="font-headline-md text-headline-md text-text-primary">
-                  Ask me anything from your notes
+                  Ask from GATE Library, My Docs, or both
                 </h2>
                 <div className="flex flex-col gap-2 max-w-md w-full mt-2">
                   {PROMPT_SUGGESTIONS.map((s) => (
@@ -157,7 +173,7 @@ export default function Chat() {
               <div className="flex justify-start pl-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-[32px] border border-border shadow-soft">
                   <span className="material-symbols-outlined text-[16px] text-primary animate-pulse">search</span>
-                  <span className="font-label-sm text-label-sm text-text-muted">Searching your notes...</span>
+                  <span className="font-label-sm text-label-sm text-text-muted">{MODE_LOADING_TEXT[knowledgeMode]}</span>
                 </div>
               </div>
             )}
@@ -168,6 +184,28 @@ export default function Chat() {
         {/* Bottom Input Area (Glassmorphism) */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-surface/80 backdrop-blur-xl border-t border-border/50">
           <div className="max-w-[900px] mx-auto relative">
+            <div className="mb-3 grid grid-cols-3 gap-2">
+              {KNOWLEDGE_MODES.map((mode) => {
+                const active = knowledgeMode === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    onClick={() => setKnowledgeMode(mode.key)}
+                    disabled={loading}
+                    aria-pressed={active}
+                    className={`min-h-10 rounded-lg border px-3 flex items-center justify-center gap-2 font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
+                      active
+                        ? 'bg-primary text-white border-primary shadow-soft'
+                        : 'bg-surface-container-low text-text-muted border-border hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{mode.icon}</span>
+                    <span className="truncate">{mode.label}</span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="relative bg-surface rounded-[16px] shadow-soft border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all duration-200">
               <textarea
                 className="w-full bg-transparent border-none rounded-[16px] pl-4 pr-16 py-3 resize-none font-body-md text-body-md text-on-surface placeholder-text-muted focus:ring-0"
