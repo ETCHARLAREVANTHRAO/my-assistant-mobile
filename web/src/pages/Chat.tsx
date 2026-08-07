@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import Layout from '../components/Layout';
-import { sendChatMessage, type KnowledgeMode } from '../services/api';
+import {
+  sendChatMessage,
+  sendLocalChatMessage,
+  type AIEngine,
+  type KnowledgeMode,
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
@@ -20,10 +25,23 @@ const KNOWLEDGE_MODES: Array<{
   { key: 'hybrid', label: 'Best Answer', icon: 'layers' },
 ];
 
+const AI_ENGINES: Array<{
+  key: AIEngine;
+  label: string;
+  icon: string;
+}> = [
+  { key: 'cloud', label: 'Cloud Assistant', icon: 'cloud_sync' },
+  { key: 'desktop-local', label: 'Desktop Local', icon: 'desktop_windows' },
+];
+
 const MODE_LOADING_TEXT: Record<KnowledgeMode, string> = {
   server: 'Searching GATE Library...',
   local: 'Searching your documents...',
   hybrid: 'Searching all study sources...',
+};
+const ENGINE_LOADING_TEXT: Record<AIEngine, string> = {
+  cloud: 'Preparing answer...',
+  'desktop-local': 'Thinking on this computer...',
 };
 const PROMPT_SUGGESTIONS = [
   'Ask the GATE Library or your own notes',
@@ -33,6 +51,8 @@ const PROMPT_SUGGESTIONS = [
 
 export default function Chat() {
   const { currentUser } = useAuth();
+  const isDesktopApp = window.location.protocol === 'file:';
+  const availableEngines = isDesktopApp ? AI_ENGINES : AI_ENGINES.filter((engine) => engine.key === 'cloud');
   const storageKey = `chatHistory:${currentUser?.uid ?? 'anonymous'}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -44,6 +64,7 @@ export default function Chat() {
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aiEngine, setAiEngine] = useState<AIEngine>('cloud');
   const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeMode>('hybrid');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +95,18 @@ export default function Chat() {
     setLoading(true);
 
     try {
+      if (aiEngine === 'desktop-local') {
+        const res = await sendLocalChatMessage(text);
+        const assistantMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: res.reply,
+          sources: ['Desktop local model'],
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        return;
+      }
+
       const res = await sendChatMessage(text, undefined, knowledgeMode);
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -173,7 +206,11 @@ export default function Chat() {
               <div className="flex justify-start pl-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-[32px] border border-border shadow-soft">
                   <span className="material-symbols-outlined text-[16px] text-primary animate-pulse">search</span>
-                  <span className="font-label-sm text-label-sm text-text-muted">{MODE_LOADING_TEXT[knowledgeMode]}</span>
+                  <span className="font-label-sm text-label-sm text-text-muted">
+                    {aiEngine === 'desktop-local'
+                      ? ENGINE_LOADING_TEXT[aiEngine]
+                      : MODE_LOADING_TEXT[knowledgeMode]}
+                  </span>
                 </div>
               </div>
             )}
@@ -184,28 +221,54 @@ export default function Chat() {
         {/* Bottom Input Area (Glassmorphism) */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-surface/80 backdrop-blur-xl border-t border-border/50">
           <div className="max-w-[900px] mx-auto relative">
-            <div className="mb-3 grid grid-cols-3 gap-2">
-              {KNOWLEDGE_MODES.map((mode) => {
-                const active = knowledgeMode === mode.key;
-                return (
-                  <button
-                    key={mode.key}
-                    type="button"
-                    onClick={() => setKnowledgeMode(mode.key)}
-                    disabled={loading}
-                    aria-pressed={active}
-                    className={`min-h-10 rounded-lg border px-3 flex items-center justify-center gap-2 font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
-                      active
-                        ? 'bg-primary text-white border-primary shadow-soft'
-                        : 'bg-surface-container-low text-text-muted border-border hover:border-primary hover:text-primary'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">{mode.icon}</span>
-                    <span className="truncate">{mode.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {availableEngines.length > 1 && (
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                {availableEngines.map((engine) => {
+                  const active = aiEngine === engine.key;
+                  return (
+                    <button
+                      key={engine.key}
+                      type="button"
+                      onClick={() => setAiEngine(engine.key)}
+                      disabled={loading}
+                      aria-pressed={active}
+                      className={`min-h-10 rounded-lg border px-3 flex items-center justify-center gap-2 font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
+                        active
+                          ? 'bg-primary text-white border-primary shadow-soft'
+                          : 'bg-surface-container-low text-text-muted border-border hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">{engine.icon}</span>
+                      <span className="truncate">{engine.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {aiEngine === 'cloud' && (
+              <div className="mb-3 grid grid-cols-3 gap-2">
+                {KNOWLEDGE_MODES.map((mode) => {
+                  const active = knowledgeMode === mode.key;
+                  return (
+                    <button
+                      key={mode.key}
+                      type="button"
+                      onClick={() => setKnowledgeMode(mode.key)}
+                      disabled={loading}
+                      aria-pressed={active}
+                      className={`min-h-10 rounded-lg border px-3 flex items-center justify-center gap-2 font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
+                        active
+                          ? 'bg-primary text-white border-primary shadow-soft'
+                          : 'bg-surface-container-low text-text-muted border-border hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">{mode.icon}</span>
+                      <span className="truncate">{mode.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="relative bg-surface rounded-[16px] shadow-soft border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all duration-200">
               <textarea
                 className="w-full bg-transparent border-none rounded-[16px] pl-4 pr-16 py-3 resize-none font-body-md text-body-md text-on-surface placeholder-text-muted focus:ring-0"

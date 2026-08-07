@@ -3,6 +3,9 @@ import { auth } from '../config/firebase';
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
+  (typeof window !== 'undefined' && window.location.protocol === 'file:'
+    ? 'http://127.0.0.1:8000'
+    : undefined) ||
   'https://my-assistant-backend-nxwg.onrender.com';
 
 export const api = axios.create({
@@ -20,6 +23,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 export type KnowledgeMode = 'server' | 'local' | 'hybrid';
+export type AIEngine = 'cloud' | 'desktop-local';
 
 export interface ChatResponse {
   reply: string;
@@ -37,6 +41,17 @@ export async function sendChatMessage(
     session_id: sessionId,
     knowledge_mode: knowledgeMode,
   });
+  return data;
+}
+
+export interface LocalChatResponse {
+  reply: string;
+  model: string;
+  elapsed_seconds: number;
+}
+
+export async function sendLocalChatMessage(message: string): Promise<LocalChatResponse> {
+  const { data } = await api.post<LocalChatResponse>('/local-chat', { message });
   return data;
 }
 

@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -24,6 +24,7 @@ import PYQSession from './pages/PYQSession';
 import PYQResult from './pages/PYQResult';
 import PYQReview from './pages/PYQReview';
 import Progress from './pages/Progress';
+import Downloads from './pages/Downloads';
 import Settings from './pages/Settings';
 import Account from './pages/Account';
 import UsageDashboard from './pages/UsageDashboard';
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route path="/pyq/result/:attemptId" element={<ProtectedRoute><PYQResult /></ProtectedRoute>} />
       <Route path="/pyq/review/:attemptId" element={<ProtectedRoute><PYQReview /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+      <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       <Route path="/usage" element={<ProtectedRoute><UsageDashboard /></ProtectedRoute>} />
@@ -77,12 +79,14 @@ function AppRoutes() {
 }
 
 function App() {
+  const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
+
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 

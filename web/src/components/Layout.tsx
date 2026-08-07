@@ -17,6 +17,7 @@ export type PageKey =
   | 'quiz'
   | 'pyq'
   | 'progress'
+  | 'downloads'
   | 'settings'
   | 'account'
   | 'usage';
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'quiz', label: 'Quiz', icon: 'quiz', to: '/quiz' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'progress', label: 'Progress', icon: 'leaderboard', to: '/progress' },
+  { key: 'downloads', label: 'Downloads', icon: 'download', to: '/downloads' },
   { key: 'ai', label: 'AI', icon: 'auto_awesome', to: '/ai' },
   { key: 'community', label: 'Community', icon: 'groups', to: '/community' },
   { key: 'exam-info', label: 'Exam Info', icon: 'campaign', to: '/exam-info' },
@@ -52,6 +54,7 @@ const MOBILE_NAV_ITEMS: NavItem[] = [
   { key: 'doubts', label: 'Doubts', icon: 'psychology_alt', to: '/doubts' },
   { key: 'pyq', label: 'PYQ', icon: 'school', to: '/pyq' },
   { key: 'resources', label: 'Resources', icon: 'auto_stories', to: '/resources' },
+  { key: 'downloads', label: 'Install', icon: 'download', to: '/downloads' },
   { key: 'account', label: 'Profile', icon: 'settings', to: '/account' },
 ];
 
