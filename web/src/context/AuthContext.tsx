@@ -7,8 +7,10 @@
 } from 'react';
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -44,6 +46,12 @@ export function friendlyError(code: string): string {
       return 'Incorrect email or password.';
     case 'auth/too-many-requests':
       return 'Too many attempts. Try again later.';
+    case 'auth/popup-blocked':
+      return 'The Google sign-in popup was blocked. Try again or allow popups for this site.';
+    case 'auth/popup-closed-by-user':
+      return 'Google sign-in was closed before it finished.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'This sign-in method is not supported here. Use email and password.';
     default:
       return `Something went wrong. Please try again. (${code})`;
   }
@@ -54,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    getRedirectResult(auth).catch(() => {});
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
@@ -74,7 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      throw error;
+    }
   };
 
   const signOutUser = async () => {

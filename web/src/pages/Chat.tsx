@@ -52,7 +52,9 @@ const PROMPT_SUGGESTIONS = [
 export default function Chat() {
   const { currentUser } = useAuth();
   const isDesktopApp = window.location.protocol === 'file:';
-  const availableEngines = isDesktopApp ? AI_ENGINES : AI_ENGINES.filter((engine) => engine.key === 'cloud');
+  const availableEngines = isDesktopApp
+    ? AI_ENGINES
+    : AI_ENGINES.filter((engine) => engine.key === 'cloud');
   const storageKey = `chatHistory:${currentUser?.uid ?? 'anonymous'}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {

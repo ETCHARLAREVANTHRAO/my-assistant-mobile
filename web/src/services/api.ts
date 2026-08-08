@@ -3,13 +3,17 @@ import { auth } from '../config/firebase';
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
-  (typeof window !== 'undefined' && window.location.protocol === 'file:'
-    ? 'http://127.0.0.1:8000'
-    : undefined) ||
   'https://my-assistant-backend-nxwg.onrender.com';
+const LOCAL_API_URL =
+  (import.meta.env.VITE_LOCAL_API_URL as string | undefined) ||
+  'http://127.0.0.1:8000';
 
 export const api = axios.create({
   baseURL: API_URL,
+});
+
+export const localApi = axios.create({
+  baseURL: LOCAL_API_URL,
 });
 
 api.interceptors.request.use(async (config) => {
@@ -51,7 +55,7 @@ export interface LocalChatResponse {
 }
 
 export async function sendLocalChatMessage(message: string): Promise<LocalChatResponse> {
-  const { data } = await api.post<LocalChatResponse>('/local-chat', { message });
+  const { data } = await localApi.post<LocalChatResponse>('/local-chat', { message });
   return data;
 }
 

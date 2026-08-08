@@ -8,6 +8,7 @@ const BACKEND_HOST = '127.0.0.1';
 const BACKEND_PORT = process.env.MY_ASSISTANT_BACKEND_PORT || '8000';
 const BACKEND_URL = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 const MODEL_NAME = 'Qwen3.5-2B-Q4_K_M.gguf';
+const START_LOCAL_BACKEND = process.env.MY_ASSISTANT_START_LOCAL_BACKEND !== '0';
 
 let backendProcess = null;
 
@@ -132,10 +133,12 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
-  try {
-    await waitForBackend();
-  } catch (error) {
-    dialog.showErrorBox('my_assistant backend', error.message);
+  if (START_LOCAL_BACKEND) {
+    try {
+      await waitForBackend();
+    } catch (error) {
+      dialog.showErrorBox('my_assistant backend', error.message);
+    }
   }
 
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -148,7 +151,9 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
-  startBackend();
+  if (START_LOCAL_BACKEND) {
+    startBackend();
+  }
   createWindow();
 
   app.on('activate', () => {

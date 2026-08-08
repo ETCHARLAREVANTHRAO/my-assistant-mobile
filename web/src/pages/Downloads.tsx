@@ -1,15 +1,16 @@
 import Layout from '../components/Layout';
 
-const DESKTOP_INSTALLER = '/downloads/MyAssistant-Setup.exe';
+const DESKTOP_INSTALLER =
+  'https://pub-8fa523d040cc4a56b2e0af6914ccd1cf.r2.dev/MyAssistant-Windows.zip';
 const ANDROID_INSTALLER = '/downloads/MyAssistant-Android.apk';
 
 const INSTALL_OPTIONS = [
   {
     title: 'Desktop App',
-    subtitle: 'Windows installer with the local backend and desktop local AI path.',
+    subtitle: 'Windows portable app with Render backend mode and bundled local AI mode.',
     icon: 'desktop_windows',
     href: DESKTOP_INSTALLER,
-    action: 'Install for Windows',
+    action: 'Download for Windows',
   },
   {
     title: 'Mobile App',
