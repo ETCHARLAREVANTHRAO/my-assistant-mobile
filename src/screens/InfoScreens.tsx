@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Card, EmptyState, PrimaryButton, ScrollShell, theme } from '../components/MobileScaffold';
-import { productApi } from '../services/api';
+import { notificationApi, NotificationPreferences, productApi } from '../services/api';
 
 function renderAny(value: any): string[] {
   if (value == null) return [];
@@ -63,6 +63,24 @@ export function DownloadsScreen() {
 }
 
 export function SettingsScreen() {
+  const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
+  const [status, setStatus] = useState('');
+
+  useEffect(() => {
+    notificationApi.getPreferences().then(setPrefs).catch(() => setStatus('Could not load notification preferences.'));
+  }, []);
+
+  async function update(key: keyof NotificationPreferences, value: boolean) {
+    setStatus('Saving...');
+    try {
+      const next = await notificationApi.updatePreferences({ [key]: value });
+      setPrefs(next);
+      setStatus('Saved.');
+    } catch {
+      setStatus('Could not save preference.');
+    }
+  }
+
   return (
     <ScrollShell title="Settings" subtitle="Mobile preferences and account configuration.">
       <Card>
@@ -70,10 +88,30 @@ export function SettingsScreen() {
         <Text style={local.row}>The mobile app uses EXPO_PUBLIC_API_URL when configured, otherwise it falls back to the Render backend.</Text>
       </Card>
       <Card>
-        <Text style={local.heading}>Recommended Test</Text>
-        <Text style={local.row}>Run Expo on a real Android device and verify auth, chat, documents, PYQ, and planner flows.</Text>
+        <Text style={local.heading}>Notifications</Text>
+        {!prefs ? <ActivityIndicator color={theme.primary} /> : (
+          <>
+            <PrefRow label="Revision reminders" value={prefs.revision_reminders} onChange={(value) => update('revision_reminders', value)} />
+            <PrefRow label="Quiz alerts" value={prefs.quiz_alerts} onChange={(value) => update('quiz_alerts', value)} />
+            <PrefRow label="Exam updates" value={prefs.exam_updates} onChange={(value) => update('exam_updates', value)} />
+            <PrefRow label="System updates" value={prefs.system_updates} onChange={(value) => update('system_updates', value)} />
+            <PrefRow label="Daily challenge" value={prefs.daily_challenge} onChange={(value) => update('daily_challenge', value)} />
+            {status ? <Text style={local.row}>{status}</Text> : null}
+          </>
+        )}
       </Card>
     </ScrollShell>
+  );
+}
+
+function PrefRow({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <View style={local.prefRow}>
+      <Text style={local.prefLabel}>{label}</Text>
+      <TouchableOpacity style={[local.switch, value && local.switchOn]} onPress={() => onChange(!value)}>
+        <View style={[local.knob, value && local.knobOn]} />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -131,4 +169,10 @@ const local = StyleSheet.create({
   row: { color: theme.muted, fontSize: 13, lineHeight: 20, marginBottom: 6 },
   error: { color: theme.danger, marginBottom: 10 },
   input: { backgroundColor: theme.surface2, borderColor: theme.border, borderWidth: 1, borderRadius: 9, color: theme.text, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10 },
+  prefRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.border },
+  prefLabel: { color: theme.text, fontSize: 13, fontWeight: '800' },
+  switch: { width: 46, height: 26, borderRadius: 13, backgroundColor: theme.surface3, padding: 3 },
+  switchOn: { backgroundColor: theme.primary },
+  knob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff' },
+  knobOn: { transform: [{ translateX: 20 }] },
 });

@@ -1,6 +1,12 @@
-import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  notificationsList,
+  notificationsMarkAllRead,
+  notificationsMarkRead,
+  type NotificationItem,
+} from '../services/api';
 
 export type PageKey =
   | 'chat'
@@ -69,9 +75,59 @@ interface LayoutProps {
 
 export default function Layout({ activePage, children, title, searchPlaceholder }: LayoutProps) {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const bellRef = useRef<HTMLDivElement>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationError, setNotificationError] = useState('');
   const avatarLetter = (currentUser?.displayName || currentUser?.email || 'U')
     .charAt(0)
     .toUpperCase();
+
+  async function refreshNotifications() {
+    if (!currentUser) return;
+    try {
+      const data = await notificationsList();
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
+      setNotificationError('');
+    } catch {
+      setNotificationError('Could not load notifications.');
+    }
+  }
+
+  useEffect(() => {
+    refreshNotifications();
+    const timer = window.setInterval(refreshNotifications, 60000);
+    return () => window.clearInterval(timer);
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      if (!bellRef.current?.contains(event.target as Node)) setPanelOpen(false);
+    }
+    window.addEventListener('mousedown', onPointerDown);
+    return () => window.removeEventListener('mousedown', onPointerDown);
+  }, []);
+
+  async function openNotification(item: NotificationItem) {
+    try {
+      if (!item.read) {
+        const data = await notificationsMarkRead(item.notification_id);
+        setNotifications(data.notifications);
+        setUnreadCount(data.unread_count);
+      }
+    } catch {}
+    setPanelOpen(false);
+    if (item.action_route) navigate(item.action_route);
+  }
+
+  async function markAllRead() {
+    const data = await notificationsMarkAllRead();
+    setNotifications(data.notifications);
+    setUnreadCount(data.unread_count);
+  }
 
   return (
     <div className="flex h-screen w-full bg-background text-on-background font-body-md text-body-md antialiased overflow-hidden">
@@ -175,9 +231,73 @@ export default function Layout({ activePage, children, title, searchPlaceholder 
             </div>
           )}
           <div className="flex items-center gap-4 ml-auto">
-            <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all scale-95 active:scale-90">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
+            <div className="relative" ref={bellRef}>
+              <button
+                aria-label="Notifications"
+                className="relative p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all scale-95 active:scale-90"
+                onClick={() => {
+                  setPanelOpen((open) => !open);
+                  refreshNotifications();
+                }}
+              >
+                <span className="material-symbols-outlined">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 min-w-5 h-5 px-1 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center border-2 border-surface">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              {panelOpen && (
+                <div className="absolute right-0 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface shadow-xl z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                    <div>
+                      <p className="font-label-md text-label-md font-bold text-text-primary">Notifications</p>
+                      <p className="font-label-sm text-label-sm text-text-muted">{unreadCount} unread</p>
+                    </div>
+                    <button
+                      className="text-primary font-label-sm text-label-sm font-bold disabled:text-text-muted"
+                      disabled={!unreadCount}
+                      onClick={markAllRead}
+                    >
+                      Mark all read
+                    </button>
+                  </div>
+                  <div className="max-h-[28rem] overflow-y-auto">
+                    {notificationError ? (
+                      <p className="px-4 py-6 text-error font-body-md text-body-md">{notificationError}</p>
+                    ) : notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-text-muted font-body-md text-body-md">No notifications yet.</p>
+                    ) : (
+                      notifications.map((item) => (
+                        <button
+                          key={item.notification_id}
+                          className={
+                            item.read
+                              ? 'w-full text-left px-4 py-3 border-b border-border/60 hover:bg-surface-container-lowest transition-colors'
+                              : 'w-full text-left px-4 py-3 border-b border-border/60 bg-primary/5 hover:bg-primary/10 transition-colors'
+                          }
+                          onClick={() => openNotification(item)}
+                        >
+                          <div className="flex gap-3">
+                            <span
+                              className={
+                                item.read
+                                  ? 'mt-1 h-2 w-2 rounded-full bg-outline-variant shrink-0'
+                                  : 'mt-1 h-2 w-2 rounded-full bg-primary shrink-0'
+                              }
+                            />
+                            <div className="min-w-0">
+                              <p className="font-label-md text-label-md font-bold text-text-primary">{item.title}</p>
+                              <p className="font-body-sm text-body-sm text-text-muted mt-1 line-clamp-2">{item.message}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link
               to="/account"
               className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shadow-soft cursor-pointer text-primary font-bold text-sm"

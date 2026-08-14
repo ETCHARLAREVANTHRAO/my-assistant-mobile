@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import {
+  notificationsGetPreferences,
+  notificationsUpdatePreferences,
+  type NotificationPreferences,
+} from '../services/api';
 
 type FontSize = 'small' | 'default' | 'large';
 
@@ -30,13 +35,41 @@ export default function Settings() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [revisionReminders, setRevisionReminders] = useState(true);
   const [quizAlerts, setQuizAlerts] = useState(true);
-  const [systemUpdates, setSystemUpdates] = useState(false);
+  const [examUpdates, setExamUpdates] = useState(true);
+  const [systemUpdates, setSystemUpdates] = useState(true);
+  const [dailyChallenge, setDailyChallenge] = useState(true);
   const [fontSize, setFontSize] = useState<FontSize>('default');
+  const [notificationStatus, setNotificationStatus] = useState('');
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('darkMode', String(darkMode));
   }, [darkMode]);
+
+  useEffect(() => {
+    notificationsGetPreferences().then((prefs) => {
+      setRevisionReminders(prefs.revision_reminders);
+      setQuizAlerts(prefs.quiz_alerts);
+      setExamUpdates(prefs.exam_updates);
+      setSystemUpdates(prefs.system_updates);
+      setDailyChallenge(prefs.daily_challenge);
+    }).catch(() => setNotificationStatus('Could not load notification preferences.'));
+  }, []);
+
+  async function saveNotificationPreference(key: keyof NotificationPreferences, value: boolean) {
+    setNotificationStatus('Saving...');
+    try {
+      const prefs = await notificationsUpdatePreferences({ [key]: value });
+      setRevisionReminders(prefs.revision_reminders);
+      setQuizAlerts(prefs.quiz_alerts);
+      setExamUpdates(prefs.exam_updates);
+      setSystemUpdates(prefs.system_updates);
+      setDailyChallenge(prefs.daily_challenge);
+      setNotificationStatus('Saved.');
+    } catch {
+      setNotificationStatus('Could not save notification preference.');
+    }
+  }
 
   return (
     <Layout activePage="settings">
@@ -112,7 +145,7 @@ export default function Settings() {
                     Spaced repetition alerts for weak topics.
                   </div>
                 </div>
-                <ToggleSwitch id="revToggle" checked={revisionReminders} onChange={setRevisionReminders} />
+                <ToggleSwitch id="revToggle" checked={revisionReminders} onChange={(value) => saveNotificationPreference('revision_reminders', value)} />
               </div>
               <div className="p-6 flex items-center justify-between">
                 <div>
@@ -123,7 +156,18 @@ export default function Settings() {
                     Reminders to take scheduled practice tests.
                   </div>
                 </div>
-                <ToggleSwitch id="quizToggle" checked={quizAlerts} onChange={setQuizAlerts} />
+                <ToggleSwitch id="quizToggle" checked={quizAlerts} onChange={(value) => saveNotificationPreference('quiz_alerts', value)} />
+              </div>
+              <div className="p-6 flex items-center justify-between">
+                <div>
+                  <div className="font-label-md text-label-md text-text-primary font-semibold mb-1">
+                    Exam Updates
+                  </div>
+                  <div className="font-body-md text-body-md text-text-muted">
+                    Upcoming GATE dates and important exam notices.
+                  </div>
+                </div>
+                <ToggleSwitch id="examToggle" checked={examUpdates} onChange={(value) => saveNotificationPreference('exam_updates', value)} />
               </div>
               <div className="p-6 flex items-center justify-between">
                 <div>
@@ -134,9 +178,21 @@ export default function Settings() {
                     News about new study materials or features.
                   </div>
                 </div>
-                <ToggleSwitch id="sysToggle" checked={systemUpdates} onChange={setSystemUpdates} />
+                <ToggleSwitch id="sysToggle" checked={systemUpdates} onChange={(value) => saveNotificationPreference('system_updates', value)} />
+              </div>
+              <div className="p-6 flex items-center justify-between">
+                <div>
+                  <div className="font-label-md text-label-md text-text-primary font-semibold mb-1">
+                    Daily Challenge
+                  </div>
+                  <div className="font-body-md text-body-md text-text-muted">
+                    One small study target in the notification bell each day.
+                  </div>
+                </div>
+                <ToggleSwitch id="dailyToggle" checked={dailyChallenge} onChange={(value) => saveNotificationPreference('daily_challenge', value)} />
               </div>
             </div>
+            {notificationStatus && <p className="font-body-sm text-body-sm text-text-muted mt-3">{notificationStatus}</p>}
           </section>
         </div>
       </div>

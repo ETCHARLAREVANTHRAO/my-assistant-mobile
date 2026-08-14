@@ -16,6 +16,7 @@ import ResourcesScreen from '../screens/ResourcesScreen';
 import AIFeaturesScreen from '../screens/AIFeaturesScreen';
 import ProgressScreen from '../screens/ProgressScreen';
 import LocalModelScreen from '../screens/LocalModelScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import {
   CommunityScreen,
   DownloadsScreen,
@@ -97,6 +98,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Progress" component={ProgressScreen} />
       <Stack.Screen name="AIFeatures" component={AIFeaturesScreen} options={{ title: 'AI Tools' }} />
       <Stack.Screen name="LocalModel" component={LocalModelScreen} options={{ title: 'On-Device Model' }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Community" component={CommunityScreen} />
       <Stack.Screen name="ExamInfo" component={ExamInfoScreen} options={{ title: 'Exam Info' }} />
       <Stack.Screen name="Motivation" component={MotivationScreen} />

@@ -453,6 +453,64 @@ export async function plannerSetGoal(weekly_hours_goal: number): Promise<StudyPl
   const { data } = await api.put<StudyPlannerSummary>('/planner/goal', { weekly_hours_goal });
   return data;
 }
+
+export interface NotificationPreferences {
+  revision_reminders: boolean;
+  quiz_alerts: boolean;
+  exam_updates: boolean;
+  system_updates: boolean;
+  daily_challenge: boolean;
+  push_enabled: boolean;
+}
+
+export interface NotificationItem {
+  notification_id: string;
+  title: string;
+  message: string;
+  type: string;
+  created_at: string;
+  read: boolean;
+  action_route: string | null;
+  priority: string;
+}
+
+export interface NotificationsResponse {
+  notifications: NotificationItem[];
+  unread_count: number;
+  preferences: NotificationPreferences;
+}
+
+export async function notificationsList(): Promise<NotificationsResponse> {
+  const { data } = await api.get<NotificationsResponse>('/notifications');
+  return data;
+}
+
+export async function notificationsUnreadCount(): Promise<{ unread_count: number }> {
+  const { data } = await api.get<{ unread_count: number }>('/notifications/unread-count');
+  return data;
+}
+
+export async function notificationsMarkRead(notificationId: string): Promise<NotificationsResponse> {
+  const { data } = await api.post<NotificationsResponse>(`/notifications/${encodeURIComponent(notificationId)}/read`);
+  return data;
+}
+
+export async function notificationsMarkAllRead(): Promise<NotificationsResponse> {
+  const { data } = await api.post<NotificationsResponse>('/notifications/read-all');
+  return data;
+}
+
+export async function notificationsGetPreferences(): Promise<NotificationPreferences> {
+  const { data } = await api.get<NotificationPreferences>('/notifications/preferences');
+  return data;
+}
+
+export async function notificationsUpdatePreferences(
+  input: Partial<NotificationPreferences>,
+): Promise<NotificationPreferences> {
+  const { data } = await api.put<NotificationPreferences>('/notifications/preferences', input);
+  return data;
+}
 export interface ResourceBookRecommendation {
   subject: string;
   title: string;

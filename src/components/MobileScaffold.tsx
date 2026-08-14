@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { notificationApi } from '../services/api';
 
 export const theme = {
   bg: '#F9FAFB',
@@ -33,6 +35,7 @@ export function ScreenShell({
   children: React.ReactNode;
   right?: React.ReactNode;
 }) {
+  const headerRight = right === undefined ? <NotificationBell /> : right;
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
@@ -40,7 +43,7 @@ export function ScreenShell({
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
-        {right}
+        {headerRight}
       </View>
       {children}
     </SafeAreaView>
@@ -110,6 +113,36 @@ export function EmptyState({ title, subtitle }: { title: string; subtitle?: stri
   );
 }
 
+export function NotificationBell() {
+  const navigation = useNavigation<any>();
+  const [count, setCount] = useState(0);
+
+  const refresh = useCallback(() => {
+    notificationApi.unreadCount().then(setCount).catch(() => setCount(0));
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const timer = setInterval(refresh, 60000);
+    return () => clearInterval(timer);
+  }, [refresh]);
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+  }, [refresh]));
+
+  return (
+    <TouchableOpacity style={styles.bellButton} onPress={() => navigation.navigate('Notifications')} accessibilityLabel="Notifications">
+      <Ionicons name={count > 0 ? 'notifications' : 'notifications-outline'} size={22} color={theme.primary} />
+      {count > 0 ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
+        </View>
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   header: {
@@ -156,4 +189,28 @@ export const styles = StyleSheet.create({
   emptyCard: { alignItems: 'center', paddingVertical: 28 },
   emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '800', marginTop: 10, textAlign: 'center' },
   emptySubtitle: { color: theme.muted, fontSize: 13, marginTop: 5, textAlign: 'center', lineHeight: 19 },
+  bellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.primaryFixed,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    right: -2,
+    top: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: theme.danger,
+    borderWidth: 2,
+    borderColor: theme.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
 });
