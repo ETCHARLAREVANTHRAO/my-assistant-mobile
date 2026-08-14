@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -71,8 +72,11 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>My Assistant</Text>
-        <Text style={styles.subtitle}>Your personal AI</Text>
+        <View style={styles.brandMark}>
+          <Ionicons name="school-outline" size={34} color="#fff" />
+        </View>
+        <Text style={styles.title}>GATE CS Assistant</Text>
+        <Text style={styles.subtitle}>PYQs, learning, doubts, planner, analytics, and AI tools in one mobile app.</Text>
 
         {/* Mode tabs */}
         <View style={styles.tabs}>
@@ -133,7 +137,7 @@ export default function AuthScreen() {
               <View style={styles.dividerLine} />
             </View>
             <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn} disabled={loading}>
-              <Text style={styles.googleButtonText}>🔵  Continue with Google</Text>
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
           </>
         )}
@@ -156,34 +160,39 @@ function friendlyError(code: string): string {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#1a1a2e' },
+  root: { flex: 1, backgroundColor: '#F9FAFB' },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 28 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 16, color: '#888', textAlign: 'center', marginBottom: 40 },
-  tabs: { flexDirection: 'row', backgroundColor: '#2a2a3e', borderRadius: 12, marginBottom: 24, padding: 4 },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  tabActive: { backgroundColor: '#6C63FF' },
-  tabText: { color: '#888', fontWeight: '600', fontSize: 15 },
+  brandMark: {
+    width: 72, height: 72, borderRadius: 18, backgroundColor: '#4F46E5',
+    alignSelf: 'center', alignItems: 'center', justifyContent: 'center',
+    marginBottom: 18,
+  },
+  title: { fontSize: 31, fontWeight: '900', color: '#3525CD', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, lineHeight: 21, color: '#6B7280', textAlign: 'center', marginBottom: 32 },
+  tabs: { flexDirection: 'row', backgroundColor: '#F0ECF9', borderRadius: 8, marginBottom: 24, padding: 4, borderWidth: 1, borderColor: '#E5E7EB' },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  tabActive: { backgroundColor: '#3525CD' },
+  tabText: { color: '#6B7280', fontWeight: '800', fontSize: 15 },
   tabTextActive: { color: '#fff' },
   input: {
-    backgroundColor: '#2a2a3e', color: '#fff', borderRadius: 12,
+    backgroundColor: '#FFFFFF', color: '#111827', borderRadius: 8,
     paddingHorizontal: 16, paddingVertical: 14, fontSize: 15,
-    marginBottom: 14, borderWidth: 1, borderColor: '#3a3a4e',
+    marginBottom: 14, borderWidth: 1, borderColor: '#E5E7EB',
   },
   error: { color: '#ff6b6b', marginBottom: 12, textAlign: 'center', fontSize: 14 },
   success: { color: '#51cf66', marginBottom: 12, textAlign: 'center', fontSize: 14 },
   button: {
-    backgroundColor: '#6C63FF', borderRadius: 12, paddingVertical: 15,
+    backgroundColor: '#3525CD', borderRadius: 8, paddingVertical: 15,
     alignItems: 'center', marginBottom: 16,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  link: { color: '#6C63FF', textAlign: 'center', fontSize: 14, marginTop: 4 },
+  link: { color: '#3525CD', textAlign: 'center', fontSize: 14, marginTop: 4, fontWeight: '700' },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#3a3a4e' },
-  dividerText: { color: '#888', marginHorizontal: 12, fontSize: 13 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  dividerText: { color: '#6B7280', marginHorizontal: 12, fontSize: 13 },
   googleButton: {
-    backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14,
-    alignItems: 'center', borderWidth: 1, borderColor: '#ddd',
+    backgroundColor: '#FFFFFF', borderRadius: 8, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB',
   },
   googleButtonText: { color: '#333', fontSize: 15, fontWeight: '600' },
 });

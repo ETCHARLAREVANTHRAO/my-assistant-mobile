@@ -90,7 +90,7 @@ export default function ProfileScreen() {
 
         {/* Usage cards */}
         {loading ? (
-          <ActivityIndicator color="#6C63FF" size="large" style={{ marginTop: 40 }} />
+        <ActivityIndicator color="#3525CD" size="large" style={{ marginTop: 40 }} />
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : data ? (
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
               used={data.daily.used}
               limit={data.daily.limit}
               resetsLabel={`Resets in ${timeUntil(data.daily.resets_at)}`}
-              color="#6C63FF"
+              color="#3525CD"
               fmt={String}
             />
             <UsageCard
@@ -110,7 +110,7 @@ export default function ProfileScreen() {
               used={data.monthly.used}
               limit={data.monthly.limit}
               resetsLabel={`Resets in ${timeUntil(data.monthly.resets_at)}`}
-              color="#51cf66"
+              color="#10B981"
               fmt={fmtTokens}
             />
             <UsageCard
@@ -119,7 +119,7 @@ export default function ProfileScreen() {
               used={data.documents.used_bytes}
               limit={data.documents.limit_bytes}
               resetsLabel="Contact admin to increase limit"
-              color="#ffa94d"
+              color="#A44100"
               fmt={fmtBytes}
             />
           </>
@@ -135,31 +135,31 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#1a1a2e' },
+  container:    { flex: 1, backgroundColor: '#F9FAFB' },
   scroll:       { alignItems: 'center', padding: 24, paddingBottom: 48 },
   avatarCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: '#6C63FF', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center',
     marginTop: 16, marginBottom: 12,
   },
   avatarText:   { color: '#fff', fontSize: 32, fontWeight: '700' },
-  email:        { color: '#aaa', fontSize: 14, marginBottom: 32 },
+  email:        { color: '#6B7280', fontSize: 14, marginBottom: 32 },
   card: {
-    width: '100%', backgroundColor: '#22223a', borderRadius: 14,
-    padding: 16, marginBottom: 14,
+    width: '100%', backgroundColor: '#FFFFFF', borderRadius: 8,
+    padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E5E7EB',
   },
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   cardIcon:     { fontSize: 20, marginRight: 10 },
-  cardTitle:    { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
-  cardCount:    { color: '#aaa', fontSize: 13, fontWeight: '500' },
-  barBg:        { height: 8, backgroundColor: '#2a2a4a', borderRadius: 4, overflow: 'hidden' },
+  cardTitle:    { flex: 1, color: '#111827', fontSize: 15, fontWeight: '800' },
+  cardCount:    { color: '#6B7280', fontSize: 13, fontWeight: '600' },
+  barBg:        { height: 8, backgroundColor: '#EAE6F4', borderRadius: 4, overflow: 'hidden' },
   barFill:      { height: 8, borderRadius: 4 },
-  resetsLabel:  { color: '#666', fontSize: 12, marginTop: 8 },
+  resetsLabel:  { color: '#6B7280', fontSize: 12, marginTop: 8 },
   signOutBtn: {
     marginTop: 28, width: '100%', paddingVertical: 14,
-    borderRadius: 12, borderWidth: 1, borderColor: '#ff6b6b',
+    borderRadius: 8, borderWidth: 1, borderColor: '#EF4444',
     alignItems: 'center',
   },
-  signOutText:  { color: '#ff6b6b', fontSize: 15, fontWeight: '600' },
-  errorText:    { color: '#ff6b6b', marginTop: 24, textAlign: 'center' },
+  signOutText:  { color: '#EF4444', fontSize: 15, fontWeight: '800' },
+  errorText:    { color: '#EF4444', marginTop: 24, textAlign: 'center' },
 });

@@ -103,7 +103,7 @@ export default function DocumentsScreen() {
 
   const usedMB = parseFloat(formatMB(usedBytes));
   const pct = Math.min((usedMB / LIMIT_MB) * 100, 100);
-  const barColor = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffa94d' : '#6C63FF';
+  const barColor = pct > 85 ? '#EF4444' : pct > 60 ? '#A44100' : '#3525CD';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -134,7 +134,7 @@ export default function DocumentsScreen() {
       )}
 
       {loading
-        ? <ActivityIndicator style={styles.center} color="#6C63FF" />
+        ? <ActivityIndicator style={styles.center} color="#3525CD" />
         : docs.length === 0
           ? <Text style={styles.empty}>No documents yet. Tap + to upload.</Text>
           : (
@@ -149,26 +149,27 @@ export default function DocumentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#2a2a3e',
+    borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  title: { fontSize: 20, fontWeight: '800', color: '#3525CD' },
   uploadBtn: {
-    backgroundColor: '#6C63FF', width: 38, height: 38,
+    backgroundColor: '#3525CD', width: 38, height: 38,
     borderRadius: 19, justifyContent: 'center', alignItems: 'center',
   },
-  quotaContainer: { paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2a2a3e' },
+  quotaContainer: { paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
   quotaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  quotaText: { color: '#888', fontSize: 12 },
-  barBg: { height: 6, backgroundColor: '#2a2a3e', borderRadius: 3, overflow: 'hidden' },
+  quotaText: { color: '#6B7280', fontSize: 12 },
+  barBg: { height: 6, backgroundColor: '#EAE6F4', borderRadius: 3, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3 },
   toast: { margin: 12, padding: 12, borderRadius: 10 },
-  toastSuccess: { backgroundColor: '#1a3a2a' },
-  toastError: { backgroundColor: '#3a1a1a' },
+  toastSuccess: { backgroundColor: '#10B981' },
+  toastError: { backgroundColor: '#EF4444' },
   toastText: { color: '#fff', fontSize: 14, textAlign: 'center' },
   center: { flex: 1, alignSelf: 'center' },
-  empty: { color: '#666', textAlign: 'center', marginTop: 60, paddingHorizontal: 40, fontSize: 15, lineHeight: 22 },
+  empty: { color: '#6B7280', textAlign: 'center', marginTop: 60, paddingHorizontal: 40, fontSize: 15, lineHeight: 22 },
 });

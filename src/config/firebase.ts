@@ -1,7 +1,5 @@
-import { Platform } from 'react-native';
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBNmRsap9D-4OHvpeluY33WA0YgnzKNxEg',
@@ -14,10 +12,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Web: use getAuth (default browser localStorage persistence)
-// Mobile: use AsyncStorage persistence
-export const auth = Platform.OS === 'web'
-  ? getAuth(app)
-  : initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
+export const auth = getAuth(app);

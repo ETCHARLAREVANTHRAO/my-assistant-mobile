@@ -1,9 +1,10 @@
 {
   "expo": {
-    "name": "My Assistant",
-    "slug": "my-assistant",
+    "name": "GATE CS Assistant",
+    "slug": "gate-cs-assistant-mobile",
     "owner": "reva333",
     "version": "1.0.0",
+    "newArchEnabled": true,
     "updates": {
       "enabled": false
     },
@@ -17,7 +18,16 @@
       "package": "com.myassistant.app"
     },
     "plugins": [
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+        "llama.rn",
+        {
+          "enableEntitlements": true,
+          "forceCxx20": true,
+          "enableOpenCLAndHexagon": false
+        }
+      ],
+      "./plugins/withAndroidLocalModel"
     ],
     "extra": {
       "eas": {

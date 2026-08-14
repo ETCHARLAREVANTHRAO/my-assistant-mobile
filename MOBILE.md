@@ -102,3 +102,32 @@ eas build -p android --profile preview
 ```
 
 iOS build requires an Apple Developer account.
+
+## On-Device Local Model
+
+The mobile app now includes a native on-device GGUF model screen using `llama.rn`.
+This does **not** run in Expo Go. Use a custom/native Android build.
+
+Local Android build requirements:
+
+```powershell
+# Required once on the machine
+# Install Android Studio or Android SDK command-line tools.
+# Set ANDROID_HOME to the SDK path, for example:
+$env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
+
+# Use a 64-bit JDK 17
+$env:JAVA_HOME="C:\Program Files\JetBrains\PyCharm Community Edition 2022.2\jbr"
+$env:Path="$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
+```
+
+Build/run:
+
+```powershell
+npm.cmd install
+npx.cmd expo prebuild --platform android --no-install
+npx.cmd expo run:android
+```
+
+In the app, open **Home -> Local Model**, import a `.gguf` file such as
+`Qwen3.5-2B-Q4_K_M.gguf`, tap **Load**, then chat offline.

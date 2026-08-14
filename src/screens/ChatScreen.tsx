@@ -77,7 +77,7 @@ export default function ChatScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
               >
-                <Ionicons name={mode.icon} size={15} color={active ? '#fff' : '#aaaad0'} />
+                <Ionicons name={mode.icon} size={15} color={active ? '#fff' : '#6B7280'} />
                 <Text style={[styles.modeText, active && styles.modeTextActive]} numberOfLines={1}>
                   {mode.label}
                 </Text>
@@ -95,7 +95,7 @@ export default function ChatScreen() {
           contentContainerStyle={styles.list}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         />
-        {loading && <ActivityIndicator style={styles.loader} color="#6C63FF" />}
+        {loading && <ActivityIndicator style={styles.loader} color="#3525CD" />}
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -117,7 +117,7 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   flex: { flex: 1 },
   modeBar: {
     flexDirection: 'row',
@@ -126,23 +126,24 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a3e',
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
   modeBtn: {
     flex: 1,
     minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#383850',
-    backgroundColor: '#222238',
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
     paddingHorizontal: 6,
   },
-  modeBtnActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
-  modeText: { color: '#aaaad0', fontSize: 12, fontWeight: '600' },
+  modeBtnActive: { backgroundColor: '#3525CD', borderColor: '#3525CD' },
+  modeText: { color: '#6B7280', fontSize: 12, fontWeight: '700' },
   modeTextActive: { color: '#fff' },
   list: { paddingVertical: 12 },
   loader: { marginVertical: 8 },
@@ -152,22 +153,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#2a2a3e',
-    backgroundColor: '#1a1a2e',
+    borderTopColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     gap: 8,
   },
   input: {
     flex: 1,
-    backgroundColor: '#2a2a3e',
-    color: '#e0e0e0',
-    borderRadius: 20,
+    backgroundColor: '#F5F2FF',
+    color: '#111827',
+    borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
     maxHeight: 120,
   },
   sendBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#3525CD',
     width: 42,
     height: 42,
     borderRadius: 21,

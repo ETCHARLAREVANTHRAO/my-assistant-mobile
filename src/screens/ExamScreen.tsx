@@ -52,7 +52,7 @@ export default function ExamScreen() {
     const isUser = item.role === 'user';
     return (
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-        <Text style={styles.bubbleText}>{item.text}</Text>
+        <Text style={[styles.bubbleText, isUser ? styles.userBubbleText : styles.botBubbleText]}>{item.text}</Text>
         {item.sources && item.sources.length > 0 && (
           <Text style={styles.sources}>📄 {item.sources.join(', ')}</Text>
         )}
@@ -87,7 +87,7 @@ export default function ExamScreen() {
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
       />
 
-      {loading && <ActivityIndicator color="#6C63FF" style={{ marginBottom: 8 }} />}
+      {loading && <ActivityIndicator color="#3525CD" style={{ marginBottom: 8 }} />}
 
       <View style={styles.inputRow}>
         <TextInput
@@ -109,21 +109,23 @@ export default function ExamScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121f' },
-  header: { paddingTop: 60, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: '#1a1a2e', borderBottomColor: '#2a2a3e', borderBottomWidth: 1 },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  headerSub: { color: '#6C63FF', fontSize: 13, marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: { paddingTop: 60, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: '#FFFFFF', borderBottomColor: '#E5E7EB', borderBottomWidth: 1 },
+  headerTitle: { color: '#3525CD', fontSize: 20, fontWeight: '800' },
+  headerSub: { color: '#6B7280', fontSize: 13, marginTop: 2 },
   list: { padding: 16, paddingBottom: 8 },
   bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 10 },
-  userBubble: { alignSelf: 'flex-end', backgroundColor: '#6C63FF' },
-  botBubble: { alignSelf: 'flex-start', backgroundColor: '#1e1e30' },
-  bubbleText: { color: '#fff', fontSize: 15, lineHeight: 22 },
-  sources: { color: '#aaa', fontSize: 11, marginTop: 6 },
+  userBubble: { alignSelf: 'flex-end', backgroundColor: '#3525CD' },
+  botBubble: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
+  bubbleText: { fontSize: 15, lineHeight: 22 },
+  userBubbleText: { color: '#FFFFFF' },
+  botBubbleText: { color: '#111827' },
+  sources: { color: '#6B7280', fontSize: 11, marginTop: 6 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyText: { color: '#aaa', fontSize: 16, textAlign: 'center' },
-  emptyHint: { color: '#555', fontSize: 13, textAlign: 'center', marginTop: 8 },
-  inputRow: { flexDirection: 'row', padding: 12, borderTopColor: '#2a2a3e', borderTopWidth: 1, backgroundColor: '#1a1a2e' },
-  input: { flex: 1, backgroundColor: '#12121f', color: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100 },
-  sendBtn: { marginLeft: 8, backgroundColor: '#6C63FF', borderRadius: 20, paddingHorizontal: 18, justifyContent: 'center' },
+  emptyText: { color: '#6B7280', fontSize: 16, textAlign: 'center' },
+  emptyHint: { color: '#6B7280', fontSize: 13, textAlign: 'center', marginTop: 8 },
+  inputRow: { flexDirection: 'row', padding: 12, borderTopColor: '#E5E7EB', borderTopWidth: 1, backgroundColor: '#FFFFFF' },
+  input: { flex: 1, backgroundColor: '#F5F2FF', color: '#111827', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100 },
+  sendBtn: { marginLeft: 8, backgroundColor: '#3525CD', borderRadius: 8, paddingHorizontal: 18, justifyContent: 'center' },
   sendText: { color: '#fff', fontWeight: '700' },
 });

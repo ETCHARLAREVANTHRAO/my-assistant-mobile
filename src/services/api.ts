@@ -120,6 +120,27 @@ export const usageApi = {
   },
 };
 
+export interface DoubtSolveResponse {
+  answer: string;
+  extracted_text: string;
+}
+
+export const doubtsApi = {
+  solve: async (input: { message: string; subject?: string; topic?: string; uri?: string; filename?: string }): Promise<DoubtSolveResponse> => {
+    const form = new FormData();
+    form.append('message', input.message);
+    form.append('subject', input.subject ?? '');
+    form.append('topic', input.topic ?? '');
+    if (input.uri && input.filename) {
+      form.append('file', { uri: input.uri, name: input.filename, type: 'application/octet-stream' } as any);
+    }
+    const { data } = await api.post<DoubtSolveResponse>('/doubts/solve', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+};
+
 export const signOut = async () => {
   await auth.signOut();
 };
@@ -272,6 +293,19 @@ export interface AnalyticsResponse {
   difficulty: StatBucket[];
   weak_topics: StatBucket[];
   strong_topics: StatBucket[];
+  subjects?: StatBucket[];
+  chapters?: StatBucket[];
+  improvement_graph?: Array<{ submitted_at: string; paper_title: string; total_marks: number; max_marks: number; accuracy: number }>;
+  time_management?: {
+    total_time_seconds: number;
+    avg_time_per_attempted_seconds: number;
+    fastest_correct_seconds: number | null;
+    slowest_incorrect_seconds: number | null;
+    overtime_questions: number;
+  };
+  rank_prediction?: string | null;
+  percentile_prediction?: number | null;
+  personalized_study_plan?: string[];
 }
 
 export interface ExplainRequest {
@@ -342,6 +376,211 @@ export const pyqApi = {
   explainQuestion: async (payload: ExplainRequest): Promise<string> => {
     const { data } = await api.post<{ explanation: string }>('/pyq/explain', payload);
     return data.explanation;
+  },
+};
+
+export interface VideoLecture {
+  title: string;
+  provider: string;
+  url: string;
+  embed_url: string | null;
+  duration_minutes: number | null;
+}
+
+export interface LearningTopic {
+  slug: string;
+  title: string;
+  priority: number;
+  status: string;
+  concepts: string[];
+  written_notes: string;
+  revision_summary: string;
+  formula_sheet: string[];
+  mind_map: string[];
+  pyq_concepts: string[];
+  video_lectures: VideoLecture[];
+}
+
+export interface LearningSubjectDetail {
+  slug: string;
+  name: string;
+  exam_weight: string;
+  description: string;
+  topic_count: number;
+  topics: LearningTopic[];
+}
+
+export const learningApi = {
+  syllabus: async (): Promise<LearningSubjectDetail[]> => {
+    const { data } = await api.get<LearningSubjectDetail[]>('/learning/syllabus');
+    return data;
+  },
+};
+
+export interface StudyPlanTaskCreate {
+  title: string;
+  subject?: string;
+  topic?: string;
+  planned_date: string;
+  start_time?: string;
+  duration_minutes?: number;
+  priority?: string;
+  notes?: string;
+  reminder_enabled?: boolean;
+}
+
+export interface StudyPlanTask {
+  task_id: string;
+  title: string;
+  subject: string;
+  topic: string;
+  planned_date: string;
+  start_time: string;
+  duration_minutes: number;
+  priority: string;
+  notes: string;
+  reminder_enabled: boolean;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudyPlannerSummary {
+  tasks: StudyPlanTask[];
+  today_key: string;
+  weekly_hours_goal: number;
+  weekly_completed_minutes: number;
+  weekly_planned_minutes: number;
+  completion_rate: number;
+  current_streak: number;
+  longest_streak: number;
+  completed_today: boolean;
+  revision_reminders: StudyPlanTask[];
+}
+
+export const plannerApi = {
+  summary: async (): Promise<StudyPlannerSummary> => {
+    const { data } = await api.get<StudyPlannerSummary>('/planner/summary');
+    return data;
+  },
+  createTask: async (input: StudyPlanTaskCreate): Promise<StudyPlanTask> => {
+    const { data } = await api.post<StudyPlanTask>('/planner/tasks', input);
+    return data;
+  },
+  completeTask: async (taskId: string): Promise<StudyPlanTask> => {
+    const { data } = await api.post<StudyPlanTask>(`/planner/tasks/${taskId}/complete`);
+    return data;
+  },
+  updateTask: async (taskId: string, input: Partial<StudyPlanTask>): Promise<StudyPlanTask> => {
+    const { data } = await api.patch<StudyPlanTask>(`/planner/tasks/${taskId}`, input);
+    return data;
+  },
+  deleteTask: async (taskId: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/planner/tasks/${taskId}`);
+    return data;
+  },
+  setGoal: async (weekly_hours_goal: number): Promise<StudyPlannerSummary> => {
+    const { data } = await api.put<StudyPlannerSummary>('/planner/goal', { weekly_hours_goal });
+    return data;
+  },
+};
+
+export interface ResourceFormulaSheet {
+  subject: string;
+  chapter: string;
+  formulas: string[];
+}
+
+export interface ResourceCheatSheet {
+  subject: string;
+  chapter: string;
+  points: string[];
+}
+
+export interface ResourceShortTrick {
+  subject: string;
+  title: string;
+  trick: string;
+  example: string;
+}
+
+export interface ResourcePYQSolution {
+  paper_id: string;
+  paper_title: string;
+  question_id: string;
+  subject: string | null;
+  chapter: string | null;
+  topic: string | null;
+  difficulty: string | null;
+  question_type: 'MCQ' | 'MSQ' | 'NAT';
+  marks: number;
+  question: string;
+  options: Record<string, string> | null;
+  image_url: string | null;
+  correct_answer: string | string[];
+  explanation: string | null;
+  solution_steps: string[] | null;
+}
+
+export interface ErrorNotebookItem extends ResourcePYQSolution {
+  notebook_id: string;
+  attempt_id: string;
+  submitted_at: string;
+  given_answer: string | string[] | null;
+  marks_awarded: number;
+  time_spent_seconds: number;
+  resolved: boolean;
+  status: string;
+  note: string;
+}
+
+export interface ResourcesSummaryResponse {
+  pyq_solutions: ResourcePYQSolution[];
+  formula_sheets: ResourceFormulaSheet[];
+  cheat_sheets: ResourceCheatSheet[];
+  short_tricks: ResourceShortTrick[];
+  error_notebook: ErrorNotebookItem[];
+}
+
+export const resourcesApi = {
+  summary: async (): Promise<ResourcesSummaryResponse> => {
+    const { data } = await api.get<ResourcesSummaryResponse>('/resources/summary');
+    return data;
+  },
+  updateErrorNotebook: async (notebookId: string, input: { resolved?: boolean; note?: string }): Promise<ResourcesSummaryResponse> => {
+    const { data } = await api.patch<ResourcesSummaryResponse>(`/resources/error-notebook/${encodeURIComponent(notebookId)}`, input);
+    return data;
+  },
+};
+
+export const aiApi = {
+  tutor: async (input: { topic: string; level?: string }): Promise<string> => {
+    const { data } = await api.post<{ answer: string }>('/ai/tutor', input);
+    return data.answer;
+  },
+  quiz: async (input: { topic: string; count?: number; difficulty?: string }): Promise<string> => {
+    const { data } = await api.post<{ answer: string }>('/ai/quiz-generator', input);
+    return data.answer;
+  },
+  mentor: async (input: { concern: string }): Promise<string> => {
+    const { data } = await api.post<{ answer: string }>('/ai/exam-mentor', input);
+    return data.answer;
+  },
+  revisionPlan: async (input: { days: number; target: string }): Promise<string> => {
+    const { data } = await api.post<{ answer: string }>('/ai/revision-plan', input);
+    return data.answer;
+  },
+};
+
+export const productApi = {
+  examInfo: async (): Promise<any> => (await api.get('/exam-info')).data,
+  motivation: async (): Promise<any> => (await api.get('/motivation')).data,
+  revision: async (): Promise<any> => (await api.get('/revision')).data,
+  community: async (): Promise<any> => (await api.get('/community')).data,
+  createCommunityPost: async (input: { title: string; content: string; category?: string }): Promise<any> => {
+    const { data } = await api.post('/community/posts', input);
+    return data;
   },
 };
 

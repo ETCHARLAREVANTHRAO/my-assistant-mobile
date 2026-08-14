@@ -36,7 +36,7 @@ export default function WeatherScreen() {
             value={city}
             onChangeText={setCity}
             placeholder="Enter city name..."
-            placeholderTextColor="#666"
+            placeholderTextColor="#6B7280"
             returnKeyType="search"
             onSubmitEditing={fetch}
           />
@@ -44,7 +44,7 @@ export default function WeatherScreen() {
             <Ionicons name="search" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
-        {loading && <ActivityIndicator style={styles.loader} color="#6C63FF" size="large" />}
+        {loading && <ActivityIndicator style={styles.loader} color="#3525CD" size="large" />}
         {weather && !loading && <WeatherWidget data={weather} />}
         {!weather && !loading && (
           <Text style={styles.hint}>Search for any city to see current weather.</Text>
@@ -55,8 +55,8 @@ export default function WeatherScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  title: { fontSize: 24, fontWeight: '800', color: '#3525CD', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
   searchRow: {
     flexDirection: 'row',
     marginHorizontal: 16,
@@ -64,20 +64,22 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: '#2a2a3e',
-    color: '#e0e0e0',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    color: '#111827',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 15,
   },
   btn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#3525CD',
     width: 46,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loader: { marginTop: 40 },
-  hint: { color: '#555', textAlign: 'center', marginTop: 60, fontSize: 15 },
+  hint: { color: '#6B7280', textAlign: 'center', marginTop: 60, fontSize: 15 },
 });
