@@ -511,6 +511,35 @@ export async function notificationsUpdatePreferences(
   const { data } = await api.put<NotificationPreferences>('/notifications/preferences', input);
   return data;
 }
+
+export interface AdminAnnouncement extends NotificationItem {
+  active: boolean;
+  created_by: string;
+}
+
+export async function adminListAnnouncements(): Promise<AdminAnnouncement[]> {
+  const { data } = await api.get<AdminAnnouncement[]>('/notifications/admin/announcements');
+  return data;
+}
+
+export async function adminCreateAnnouncement(input: {
+  title: string;
+  message: string;
+  action_route?: string;
+  priority?: string;
+  send_push?: boolean;
+}): Promise<{ announcement: AdminAnnouncement; push: { sent: number; details: unknown } }> {
+  const { data } = await api.post<{ announcement: AdminAnnouncement; push: { sent: number; details: unknown } }>(
+    '/notifications/admin/announcements',
+    input,
+  );
+  return data;
+}
+
+export async function adminDeactivateAnnouncement(announcementId: string): Promise<{ status: string }> {
+  const { data } = await api.delete<{ status: string }>(`/notifications/admin/announcements/${encodeURIComponent(announcementId)}`);
+  return data;
+}
 export interface ResourceBookRecommendation {
   subject: string;
   title: string;

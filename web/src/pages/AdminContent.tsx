@@ -1,5 +1,14 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { adminGetContent, adminResetContent, adminSaveContent, type AdminContentPayload } from '../services/api';
+import {
+  adminCreateAnnouncement,
+  adminDeactivateAnnouncement,
+  adminGetContent,
+  adminListAnnouncements,
+  adminResetContent,
+  adminSaveContent,
+  type AdminAnnouncement,
+  type AdminContentPayload,
+} from '../services/api';
 
 type SectionKey = keyof AdminContentPayload;
 
@@ -20,6 +29,12 @@ export default function AdminContent() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [announcementRoute, setAnnouncementRoute] = useState('/exam-info');
+  const [announcementPriority, setAnnouncementPriority] = useState('normal');
+  const [sendPush, setSendPush] = useState(false);
 
   useEffect(() => {
     adminGetContent()
@@ -29,6 +44,7 @@ export default function AdminContent() {
       })
       .catch((err: any) => setError(err?.response?.data?.detail || 'Admin content could not be loaded.'))
       .finally(() => setLoading(false));
+    adminListAnnouncements().then(setAnnouncements).catch(() => {});
   }, []);
 
   const selectedMeta = useMemo(() => SECTIONS.find((item) => item.key === section)!, [section]);
@@ -68,6 +84,44 @@ export default function AdminContent() {
       setMessage('Content reset to defaults.');
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Reset failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function createAnnouncement() {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await adminCreateAnnouncement({
+        title: announcementTitle,
+        message: announcementMessage,
+        action_route: announcementRoute || undefined,
+        priority: announcementPriority,
+        send_push: sendPush,
+      });
+      setAnnouncementTitle('');
+      setAnnouncementMessage('');
+      setSendPush(false);
+      setAnnouncements(await adminListAnnouncements());
+      setMessage(`Announcement published${result.push.sent ? ` and pushed to ${result.push.sent} devices` : ''}.`);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Announcement failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deactivateAnnouncement(id: string) {
+    setSaving(true);
+    setError('');
+    try {
+      await adminDeactivateAnnouncement(id);
+      setAnnouncements(await adminListAnnouncements());
+      setMessage('Announcement deactivated.');
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Could not deactivate announcement.');
     } finally {
       setSaving(false);
     }
@@ -120,6 +174,55 @@ export default function AdminContent() {
             )}
           </main>
         </div>
+
+        <section className="bg-surface rounded-lg border border-border shadow-soft p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-primary">notifications_active</span>
+            <h2 className="font-headline-sm text-headline-sm text-text-primary">Bell Announcements</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder="Title" className="w-full rounded-lg border border-border bg-surface-container-lowest px-4 py-3" />
+              <textarea value={announcementMessage} onChange={(event) => setAnnouncementMessage(event.target.value)} placeholder="Message" rows={4} className="w-full rounded-lg border border-border bg-surface-container-lowest px-4 py-3" />
+              <div className="grid sm:grid-cols-2 gap-3">
+                <select value={announcementRoute} onChange={(event) => setAnnouncementRoute(event.target.value)} className="rounded-lg border border-border bg-surface-container-lowest px-4 py-3">
+                  <option value="/exam-info">Exam Info</option>
+                  <option value="/pyq">PYQ</option>
+                  <option value="/revision-planner">Revision Planner</option>
+                  <option value="/resources">Resources</option>
+                  <option value="/progress">Progress</option>
+                  <option value="/motivation">Motivation</option>
+                </select>
+                <select value={announcementPriority} onChange={(event) => setAnnouncementPriority(event.target.value)} className="rounded-lg border border-border bg-surface-container-lowest px-4 py-3">
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 font-label-md text-label-md text-text-muted">
+                <input type="checkbox" checked={sendPush} onChange={(event) => setSendPush(event.target.checked)} />
+                Send push notification to registered devices
+              </label>
+              <button onClick={createAnnouncement} disabled={saving || !announcementTitle.trim() || !announcementMessage.trim()} className="inline-flex items-center gap-2 rounded-lg bg-primary text-white px-4 py-2 font-label-md text-label-md disabled:opacity-50">
+                <span className="material-symbols-outlined text-sm">campaign</span>Publish Announcement
+              </button>
+            </div>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {announcements.length === 0 ? <p className="text-text-muted">No announcements yet.</p> : announcements.map((item) => (
+                <div key={item.notification_id} className={item.active ? 'rounded-lg border border-border p-3' : 'rounded-lg border border-border p-3 opacity-60'}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-label-md text-label-md font-bold text-text-primary">{item.title}</p>
+                      <p className="font-body-sm text-body-sm text-text-muted mt-1">{item.message}</p>
+                    </div>
+                    {item.active && (
+                      <button onClick={() => deactivateAnnouncement(item.notification_id)} className="text-error font-label-sm text-label-sm font-bold">Deactivate</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

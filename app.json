@@ -18,6 +18,7 @@
       "package": "com.myassistant.app"
     },
     "plugins": [
+      "expo-notifications",
       "expo-document-picker",
       [
         "llama.rn",

@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
-import { examApi } from '../services/api';
+import { chatApi } from '../services/api';
 
 interface Message {
   id: string;
@@ -28,7 +28,7 @@ export default function ExamScreen() {
     setLoading(true);
 
     try {
-      const res = await examApi.chat(text);
+      const res = await chatApi.send(`Answer as a focused exam assistant for GATE/GRE/GMAT preparation. Question: ${text}`, 'server');
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

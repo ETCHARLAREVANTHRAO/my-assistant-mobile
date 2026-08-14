@@ -16,6 +16,10 @@ function targetRoute(actionRoute: string | null): string | null {
       return 'Motivation';
     case '/progress':
       return 'Progress';
+    case '/resources':
+      return 'Resources';
+    case '/learning':
+      return 'Learning';
     default:
       return null;
   }

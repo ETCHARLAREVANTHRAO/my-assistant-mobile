@@ -1,36 +1,37 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import Login from './pages/Login';
-import Chat from './pages/Chat';
-import Documents from './pages/Documents';
-import Learning from './pages/Learning';
-import Doubts from './pages/Doubts';
-import RevisionPlanner from './pages/RevisionPlanner';
-import Resources from './pages/Resources';
-import AIFeatures from './pages/AIFeatures';
-import Community from './pages/Community';
-import ExamInfo from './pages/ExamInfo';
-import Motivation from './pages/Motivation';
-import Revision from './pages/Revision';
-import QuizSetup from './pages/QuizSetup';
-import QuizResults from './pages/QuizResults';
-import MockTestSession from './pages/MockTestSession';
-import MockTestResults from './pages/MockTestResults';
-import PYQHome from './pages/PYQHome';
-import PYQInstructions from './pages/PYQInstructions';
-import PYQSession from './pages/PYQSession';
-import PYQResult from './pages/PYQResult';
-import PYQReview from './pages/PYQReview';
-import Progress from './pages/Progress';
-import Downloads from './pages/Downloads';
-import Settings from './pages/Settings';
-import Account from './pages/Account';
-import UsageDashboard from './pages/UsageDashboard';
-import AdminDriveSync from './pages/AdminDriveSync';
-import AdminContent from './pages/AdminContent';
-import AdminDashboard from './pages/AdminDashboard';
+const Login = lazy(() => import('./pages/Login'));
+const Chat = lazy(() => import('./pages/Chat'));
+const Documents = lazy(() => import('./pages/Documents'));
+const Learning = lazy(() => import('./pages/Learning'));
+const Doubts = lazy(() => import('./pages/Doubts'));
+const RevisionPlanner = lazy(() => import('./pages/RevisionPlanner'));
+const Resources = lazy(() => import('./pages/Resources'));
+const AIFeatures = lazy(() => import('./pages/AIFeatures'));
+const Community = lazy(() => import('./pages/Community'));
+const ExamInfo = lazy(() => import('./pages/ExamInfo'));
+const Motivation = lazy(() => import('./pages/Motivation'));
+const Revision = lazy(() => import('./pages/Revision'));
+const QuizSetup = lazy(() => import('./pages/QuizSetup'));
+const QuizResults = lazy(() => import('./pages/QuizResults'));
+const MockTestSession = lazy(() => import('./pages/MockTestSession'));
+const MockTestResults = lazy(() => import('./pages/MockTestResults'));
+const PYQHome = lazy(() => import('./pages/PYQHome'));
+const PYQInstructions = lazy(() => import('./pages/PYQInstructions'));
+const PYQSession = lazy(() => import('./pages/PYQSession'));
+const PYQResult = lazy(() => import('./pages/PYQResult'));
+const PYQReview = lazy(() => import('./pages/PYQReview'));
+const Progress = lazy(() => import('./pages/Progress'));
+const Downloads = lazy(() => import('./pages/Downloads'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Account = lazy(() => import('./pages/Account'));
+const UsageDashboard = lazy(() => import('./pages/UsageDashboard'));
+const AdminDriveSync = lazy(() => import('./pages/AdminDriveSync'));
+const AdminContent = lazy(() => import('./pages/AdminContent'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
@@ -40,8 +41,9 @@ function RootRedirect() {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <Suspense fallback={<div className="min-h-screen bg-background text-text-muted flex items-center justify-center">Loading...</div>}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
       <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
@@ -72,9 +74,10 @@ function AppRoutes() {
       <Route path="/admin/content" element={<ProtectedRoute><AdminContent /></ProtectedRoute>} />
       <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
-      <Route path="/" element={<RootRedirect />} />
-      <Route path="*" element={<RootRedirect />} />
-    </Routes>
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="*" element={<RootRedirect />} />
+      </Routes>
+    </Suspense>
   );
 }
 

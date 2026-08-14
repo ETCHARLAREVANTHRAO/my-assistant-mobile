@@ -8,6 +8,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import { registerForPushNotifications } from './src/services/pushNotifications';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +18,7 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      if (u) registerForPushNotifications().catch(() => {});
     });
     return unsubscribe;
   }, []);
