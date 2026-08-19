@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBNmRsap9D-4OHvpeluY33WA0YgnzKNxEg',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: 'my-assistant-ecf2f.firebaseapp.com',
   projectId: 'my-assistant-ecf2f',
   storageBucket: 'my-assistant-ecf2f.firebasestorage.app',
