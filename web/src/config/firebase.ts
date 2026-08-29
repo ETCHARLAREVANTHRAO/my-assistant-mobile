@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 
-const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY ?? '';
+const firebaseApiKey =
+  import.meta.env.VITE_FIREBASE_API_KEY ?? 'AIzaSyBNmRsap9D-4OHvpeluY33WA0YgnzKNxEg';
 
 const firebaseConfig = {
   apiKey: firebaseApiKey,
