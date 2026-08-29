@@ -2,7 +2,8 @@ import Layout from '../components/Layout';
 
 const DESKTOP_INSTALLER =
   'https://pub-8fa523d040cc4a56b2e0af6914ccd1cf.r2.dev/MyAssistant-Windows.zip';
-const ANDROID_INSTALLER = '/downloads/MyAssistant-Android.apk';
+const ANDROID_INSTALLER =
+  'https://pub-8fa523d040cc4a56b2e0af6914ccd1cf.r2.dev/app-debug.apk';
 
 const INSTALL_OPTIONS = [
   {
@@ -14,7 +15,7 @@ const INSTALL_OPTIONS = [
   },
   {
     title: 'Mobile App',
-    subtitle: 'Android APK download location for the phone app package.',
+    subtitle: 'Android APK package for installing the mobile app on your phone.',
     icon: 'android',
     href: ANDROID_INSTALLER,
     action: 'Install for Android',
