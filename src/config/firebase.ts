@@ -1,8 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
+const firebaseApiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '';
+
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
+  apiKey: firebaseApiKey,
   authDomain: 'my-assistant-ecf2f.firebaseapp.com',
   projectId: 'my-assistant-ecf2f',
   storageBucket: 'my-assistant-ecf2f.firebasestorage.app',
@@ -10,6 +12,11 @@ const firebaseConfig = {
   appId: '1:927897334283:web:fb36bac9374a169afe4d0e',
 };
 
-const app = initializeApp(firebaseConfig);
+const mockAuth = {
+  currentUser: null,
+  signOut: async () => {},
+};
 
-export const auth = getAuth(app);
+const app = firebaseApiKey ? initializeApp(firebaseConfig) : null;
+
+export const auth = app ? getAuth(app) : (mockAuth as any);

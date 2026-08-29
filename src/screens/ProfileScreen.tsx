@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { auth } from '../config/firebase';
 import { usageApi, signOut } from '../services/api';
 
 interface UsageData {
@@ -58,8 +57,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
-  const user = auth.currentUser;
-  const initials = (user?.email ?? 'U')[0].toUpperCase();
+  const guestEmail = 'guest@mobile-preview';
+  const initials = guestEmail[0].toUpperCase();
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -86,7 +85,7 @@ export default function ProfileScreen() {
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
-        <Text style={styles.email}>{user?.email}</Text>
+        <Text style={styles.email}>{guestEmail}</Text>
 
         {/* Usage cards */}
         {loading ? (

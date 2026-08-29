@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-apk:
-    name: Build debug APK
+    name: Build release APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -45,12 +45,12 @@ jobs:
         env:
           EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
           GRADLE_OPTS: -Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false
-        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2 --stacktrace
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2 --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-assistant-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: my-assistant-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 7

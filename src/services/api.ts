@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
-import { auth } from '../config/firebase';
 
 // Web: route through Vercel proxy (/backend to Render) - no CORS needed
 // Mobile: call Render directly
@@ -9,19 +8,8 @@ export const BASE_URL = Platform.OS === 'web' ? '/backend' : RENDER_URL;
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 30000 });
 
-// Attach Firebase ID token to every request (if logged in)
-api.interceptors.request.use(async (config) => {
-  try {
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken();
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch {
-    // Firebase not ready - proceed without auth header
-  }
-  return config;
-});
+// Mobile preview runs without Firebase auth for now.
+api.interceptors.request.use(async (config) => config);
 
 export type KnowledgeMode = 'server' | 'local' | 'hybrid';
 
@@ -68,15 +56,9 @@ export const documentsApi = {
       const form = new FormData();
       form.append('file', file, file.name);
 
-      const headers: Record<string, string> = {};
-      try {
-        const user = auth.currentUser;
-        if (user) headers['Authorization'] = `Bearer ${await user.getIdToken()}`;
-      } catch {}
-
       let res: Response;
       try {
-        res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', headers, body: form });
+        res = await fetch(`${BASE_URL}/documents/upload`, { method: 'POST', body: form });
       } catch (netErr: any) {
         throw new Error('Network error - could not reach server: ' + (netErr.message ?? 'Failed to fetch'));
       }
@@ -142,7 +124,7 @@ export const doubtsApi = {
 };
 
 export const signOut = async () => {
-  await auth.signOut();
+  return Promise.resolve();
 };
 
 // GATE PYQ mock test
