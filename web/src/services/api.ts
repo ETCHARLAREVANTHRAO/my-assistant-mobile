@@ -17,6 +17,8 @@ export const localApi = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
+  if (!auth) return config;
+
   const user = auth.currentUser;
   if (user) {
     const token = await user.getIdToken();
