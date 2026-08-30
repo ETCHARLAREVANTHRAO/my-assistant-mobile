@@ -95,9 +95,59 @@ export default function LearningScreen() {
   const savedCount = Object.values(bookmarks).filter(Boolean).length;
   const revisedCount = Object.values(progress).filter((value) => value === 'revised' || value === 'mastered').length;
   const masteredCount = Object.values(progress).filter((value) => value === 'mastered').length;
+  const flattenedTopics = subjects.flatMap((subject) =>
+    subject.topics.map((topic) => ({
+      subject,
+      topic,
+      key: topicKey(subject.slug, topic.slug),
+    })),
+  );
+  const continueItem =
+    flattenedTopics.find((item) => progress[item.key] === 'learning') ??
+    flattenedTopics.find((item) => progress[item.key] === 'revised') ??
+    flattenedTopics.find((item) => bookmarks[item.key]) ??
+    flattenedTopics[0];
+  const recommendedItems = flattenedTopics
+    .filter((item) => progress[item.key] !== 'mastered')
+    .sort((a, b) => {
+      const pyqDelta = b.topic.pyq_match_count - a.topic.pyq_match_count;
+      if (pyqDelta !== 0) return pyqDelta;
+      return a.topic.priority - b.topic.priority;
+    })
+    .slice(0, 3);
+  const learningGoals = [
+    { title: 'GATE CS', description: 'Syllabus, PYQs, revision, and mock-test flow.', match: 'operating-systems' },
+    { title: 'Placements', description: 'DSA, CS fundamentals, aptitude, and interviews.', match: 'data-structures' },
+    { title: 'Master Computer Science', description: 'Core CS from fundamentals to systems.', match: 'computer-organization' },
+    { title: 'AI & Machine Learning', description: 'Math, ML, DL, NLP, and model foundations.', match: 'machine-learning' },
+    { title: 'Generative AI', description: 'Transformers, LLMs, RAG, agents, and AI apps.', match: 'generative-ai' },
+    { title: 'Build Projects', description: 'Turn topics into practical portfolio work.', match: 'software-engineering' },
+  ];
+  const learningPaths = [
+    { title: 'GATE CS Roadmap', steps: ['Programming & DSA', 'Core CS', 'Mathematics', 'PYQ practice', 'Mock tests'] },
+    { title: 'AI/ML Roadmap', steps: ['Python', 'Math for AI', 'Machine Learning', 'Deep Learning', 'NLP', 'Generative AI'] },
+    { title: 'Placement Roadmap', steps: ['DSA patterns', 'DBMS/OS/CN', 'Aptitude', 'Interview prompts', 'Projects'] },
+    { title: 'Core CS Roadmap', steps: ['Programming', 'Data structures', 'Algorithms', 'Systems', 'Software engineering'] },
+  ];
 
   function topicKey(subject: string, topic: string) {
     return `${subject}:${topic}`;
+  }
+
+  function jumpToTopic(subject: LearningSubjectDetail, topic: LearningTopic) {
+    setSubjectSlug(subject.slug);
+    setTopicSlug(topic.slug);
+  }
+
+  function chooseGoal(match: string) {
+    const subject =
+      subjects.find((item) => item.slug === match) ??
+      subjects.find((item) => item.slug.includes(match) || item.name.toLowerCase().includes(match.replace(/-/g, ' '))) ??
+      subjects[0];
+    if (subject) {
+      setSubjectSlug(subject.slug);
+      setTopicSlug(subject.topics[0]?.slug ?? '');
+    }
   }
 
   async function updateProgress(key: string, value: TopicProgress) {
@@ -132,16 +182,6 @@ export default function LearningScreen() {
     Share.share({ title: `${subject.name} Complete Sheet`, message }).catch(() => {});
   }
 
-  function shareAllSheets() {
-    const message = subjects.map((subject) => [
-      subject.name,
-      subject.description,
-      '',
-      ...subject.topics.map((topic) => `- ${topic.title}: ${topic.difficulty}, ${topic.estimated_study_minutes} min`),
-    ].join('\n')).join('\n\n');
-    Share.share({ title: 'Complete CS Learning Bank', message }).catch(() => {});
-  }
-
   return (
     <ScreenShell title="Learning" subtitle="Subject-wise GATE CS syllabus, notes, formulas, and PYQ concepts.">
       {loading ? (
@@ -157,9 +197,6 @@ export default function LearningScreen() {
             <Metric label="Revised" value={revisedCount} />
             <Metric label="Mastered" value={masteredCount} />
           </View>
-          <TouchableOpacity style={local.filterButton} onPress={shareAllSheets}>
-            <Text style={local.filterText}>Share all sheets</Text>
-          </TouchableOpacity>
 
           <TextInput
             value={searchTerm}
@@ -179,6 +216,66 @@ export default function LearningScreen() {
               <Text style={[local.filterText, language === 'hi' && { color: '#fff' }]}>Hindi</Text>
             </TouchableOpacity>
           </View>
+
+          {continueItem ? (
+            <Card>
+              <Text style={local.section}>Continue Learning</Text>
+              <Text style={local.videoMeta}>{continueItem.subject.name}</Text>
+              <Text style={local.topicTitle}>{continueItem.topic.title}</Text>
+              <View style={local.progressTrack}>
+                <View
+                  style={[
+                    local.progressFill,
+                    {
+                      width: progress[continueItem.key] === 'mastered'
+                        ? '100%'
+                        : progress[continueItem.key] === 'revised'
+                          ? '72%'
+                          : progress[continueItem.key] === 'learning'
+                            ? '42%'
+                            : '12%',
+                    },
+                  ]}
+                />
+              </View>
+              <TouchableOpacity style={local.primaryAction} onPress={() => jumpToTopic(continueItem.subject, continueItem.topic)}>
+                <Text style={local.primaryActionText}>Continue</Text>
+              </TouchableOpacity>
+            </Card>
+          ) : null}
+
+          <Text style={local.section}>Choose Your Goal</Text>
+          <View style={local.goalGrid}>
+            {learningGoals.map((goal) => (
+              <TouchableOpacity key={goal.title} style={local.goalCard} onPress={() => chooseGoal(goal.match)}>
+                <Text style={local.videoTitle}>{goal.title}</Text>
+                <Text style={local.videoMeta}>{goal.description}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={local.section}>Recommended Next</Text>
+          {recommendedItems.map((item) => (
+            <TouchableOpacity key={item.key} style={local.recommendCard} onPress={() => jumpToTopic(item.subject, item.topic)}>
+              <Text style={local.videoMeta}>{item.subject.name}</Text>
+              <Text style={local.videoTitle}>{item.topic.title}</Text>
+              <Text style={local.videoOpen}>{item.topic.pyq_match_count} linked PYQs</Text>
+            </TouchableOpacity>
+          ))}
+
+          <Text style={local.section}>Learning Paths</Text>
+          {learningPaths.map((path) => (
+            <Card key={path.title}>
+              <Text style={local.cardTitle}>{path.title}</Text>
+              <View style={local.pathWrap}>
+                {path.steps.map((step, index) => (
+                  <Text key={step} style={local.pathStep}>{index + 1}. {step}</Text>
+                ))}
+              </View>
+            </Card>
+          ))}
+
+          <Text style={local.section}>Explore All Subjects</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
             {visibleSubjects.map((subject) => {
@@ -757,6 +854,13 @@ const local = StyleSheet.create({
   metricLabel: { color: theme.muted, fontSize: 10, fontWeight: '800' },
   metricValue: { color: theme.primary, fontSize: 18, fontWeight: '900', marginTop: 2 },
   search: { color: theme.text, borderWidth: 1, borderColor: theme.border, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 12, fontSize: 13, fontWeight: '700' },
+  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  goalCard: { width: '48%', minHeight: 112, borderWidth: 1, borderColor: theme.border, borderRadius: 9, backgroundColor: theme.surface, padding: 12 },
+  recommendCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, backgroundColor: theme.surface, padding: 12, marginBottom: 8 },
+  progressTrack: { height: 8, borderRadius: 999, backgroundColor: theme.bg, overflow: 'hidden', marginTop: 10 },
+  progressFill: { height: '100%', borderRadius: 999, backgroundColor: theme.primary },
+  pathWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pathStep: { color: theme.muted, fontSize: 11, fontWeight: '800', borderWidth: 1, borderColor: theme.border, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, backgroundColor: theme.bg },
   filterButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: theme.border, borderRadius: 9, backgroundColor: theme.surface, paddingHorizontal: 12, paddingVertical: 9, marginBottom: 12 },
   filterButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   filterText: { color: theme.muted, fontSize: 12, fontWeight: '900' },
