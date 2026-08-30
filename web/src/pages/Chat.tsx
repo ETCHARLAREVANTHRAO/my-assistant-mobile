@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import {
   sendChatMessage,
@@ -51,6 +52,7 @@ const PROMPT_SUGGESTIONS = [
 
 export default function Chat() {
   const { currentUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isDesktopApp = window.location.protocol === 'file:';
   const availableEngines = isDesktopApp
     ? AI_ENGINES
@@ -86,6 +88,13 @@ export default function Chat() {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    const prompt = searchParams.get('prompt');
+    if (!prompt) return;
+    setInput(prompt);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleSend = async () => {
     const text = input.trim();

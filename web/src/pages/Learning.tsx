@@ -888,6 +888,7 @@ function ReferenceLinksBlock({ topic }: { topic: LearningTopic }) {
 }
 
 function AITutorBlock({ topic }: { topic: LearningTopic }) {
+  const navigate = useNavigate();
   const actions = [
     `Explain ${topic.title} simpler`,
     `Give one worked example on ${topic.concepts[0] ?? topic.title}`,
@@ -907,6 +908,7 @@ function AITutorBlock({ topic }: { topic: LearningTopic }) {
         {actions.map((action) => (
           <button
             key={action}
+            onClick={() => navigate(`/chat?prompt=${encodeURIComponent(action)}`)}
             className="rounded-lg border border-border bg-surface-container-lowest px-4 py-3 text-left font-label-md text-label-md text-text-primary hover:border-primary/40"
           >
             {action}
