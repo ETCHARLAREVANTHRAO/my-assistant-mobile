@@ -19,6 +19,8 @@ const weightTone: Record<string, string> = {
 
 const progressOptions = ['not-started', 'learning', 'revised', 'mastered'] as const;
 type TopicProgress = (typeof progressOptions)[number];
+const topicTabs = ['Overview', 'Learn', 'Practice', 'Revise', 'Videos', 'AI Tutor'] as const;
+type TopicTab = (typeof topicTabs)[number];
 
 export default function Learning() {
   const navigate = useNavigate();
@@ -596,9 +598,15 @@ function TopicPanel({
   language: 'en' | 'hi';
   onPractice: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<TopicTab>('Overview');
   const firstVideo = topic.video_lectures.find((lecture) => lecture.embed_url);
   const writtenNotes = topic.notes_by_language[language] || topic.written_notes;
   const revisionNotes = topic.revision_by_language[language] || topic.revision_summary;
+
+  useEffect(() => {
+    setActiveTab('Overview');
+  }, [topic.slug]);
+
   const downloadCheatSheet = () => {
     const body = [
       `# ${topic.title}`,
@@ -706,122 +714,204 @@ function TopicPanel({
           ))}
         </div>
 
-        <div className="mt-5 aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface-container-low flex items-center justify-center">
-          {firstVideo?.embed_url ? (
-            <iframe
-              className="h-full w-full"
-              src={firstVideo.embed_url}
-              title={firstVideo.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 text-text-muted px-4 text-center">
-              <span className="material-symbols-outlined text-4xl text-primary">smart_display</span>
-              <p className="font-label-md text-label-md">Video lecture slot ready</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <DiagramBlock topic={topic} />
-        <FocusTimer topic={topic} />
-        <StudyQuest topic={topic} />
-        <ExamSprint topic={topic} />
-        <ConfidenceMeter topic={topic} />
-        <MistakeDrill topic={topic} />
-        <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
-        <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
-        <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
-        <TextBlock icon="summarize" title="Revision Notes" text={revisionNotes} />
-        <ResourceBlock icon="functions" title="Formula Sheet" items={topic.formula_sheet.length ? topic.formula_sheet : topic.concepts.slice(0, 4)} />
-        <ResourceBlock icon="account_tree" title="Mind Map" items={topic.mind_map} />
-        <ResourceBlock icon="route" title="Study Flow" items={topic.study_flow} />
-        <ResourceBlock icon="warning" title="Common Mistakes" items={topic.common_mistakes} />
-        <ResourceBlock icon="task_alt" title="Practice Tasks" items={topic.practice_tasks} />
-        <ResourceBlock icon="quiz" title="Quick Checks" items={topic.quick_checks} />
-        <ResourceBlock icon="forum" title="Interview Prompts" items={topic.interview_prompts} />
-        <ResourceBlock icon="tips_and_updates" title="Memory Hooks" items={topic.memory_hooks} />
-        <ResourceBlock icon="menu_book" title="Reading Pointers" items={topic.reading_pointers} />
-        <ResourceBlock icon="military_tech" title="Mastery Rubric" items={topic.mastery_rubric} />
-      </div>
-
-      <WorkedExamplesBlock topic={topic} />
-      <DeepNotesBlock topic={topic} />
-      <RevisionScheduleBlock topic={topic} />
-
-      <FlashcardDeck topic={topic} />
-
-      <TopicQuiz topic={topic} />
-
-      <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-primary">smart_display</span>
-          <h4 className="font-headline-sm text-headline-sm text-text-primary">Video Links</h4>
-        </div>
-        <div className="space-y-2">
-          {topic.video_lectures.map((lecture) => (
-            <a
-              key={lecture.url}
-              href={lecture.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2 text-text-primary hover:border-primary/40 transition-colors"
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          {topicTabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={
+                activeTab === tab
+                  ? 'shrink-0 rounded-lg bg-primary px-4 py-2 font-label-md text-label-md text-on-primary'
+                  : 'shrink-0 rounded-lg border border-border bg-surface-container-lowest px-4 py-2 font-label-md text-label-md text-text-muted hover:border-primary/40'
+              }
             >
-              <span className="font-label-md text-label-md">{lecture.title}</span>
-              <span className="material-symbols-outlined text-sm text-primary">open_in_new</span>
-            </a>
+              {tab}
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-primary">link</span>
-          <h4 className="font-headline-sm text-headline-sm text-text-primary">Reference Links</h4>
+      {activeTab === 'Overview' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <StudyQuest topic={topic} />
+          <ExamSprint topic={topic} />
+          <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
+          <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
+          <ResourceBlock icon="route" title="Study Flow" items={topic.study_flow} />
+          <ResourceBlock icon="military_tech" title="Mastery Rubric" items={topic.mastery_rubric} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {topic.reference_links.map((link) => (
-            <a
-              key={link.url}
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2 text-text-primary hover:border-primary/40 transition-colors"
-            >
-              <span>
-                <span className="block font-label-md text-label-md">{link.title}</span>
-                <span className="block font-label-sm text-label-sm text-text-muted capitalize">{link.type}</span>
-              </span>
-              <span className="material-symbols-outlined text-sm text-primary">open_in_new</span>
-            </a>
-          ))}
-        </div>
-      </div>
+      )}
 
-      <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-primary">history_edu</span>
-          <h4 className="font-headline-sm text-headline-sm text-text-primary">PYQ Concepts</h4>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {topic.pyq_concepts.map((concept) => (
-            <span key={concept} className="px-3 py-1.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm">
-              {concept}
-            </span>
-          ))}
-        </div>
-        {topic.pyq_matches.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {topic.pyq_matches.map((match) => (
-              <div key={`${match.chapter}-${match.name}`} className="rounded-lg border border-border bg-surface-container-lowest p-3">
-                <p className="font-label-md text-label-md text-text-primary">{match.name}</p>
-                <p className="mt-1 font-label-sm text-label-sm text-text-muted">{match.question_count} questions</p>
-              </div>
-            ))}
+      {activeTab === 'Learn' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <DiagramBlock topic={topic} />
+            <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
+            <ResourceBlock icon="functions" title="Formula Sheet" items={topic.formula_sheet.length ? topic.formula_sheet : topic.concepts.slice(0, 4)} />
+            <ResourceBlock icon="account_tree" title="Mind Map" items={topic.mind_map} />
+            <ResourceBlock icon="menu_book" title="Reading Pointers" items={topic.reading_pointers} />
+            <ResourceBlock icon="tips_and_updates" title="Memory Hooks" items={topic.memory_hooks} />
           </div>
-        )}
+          <DeepNotesBlock topic={topic} />
+          <WorkedExamplesBlock topic={topic} />
+        </>
+      )}
+
+      {activeTab === 'Practice' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <ResourceBlock icon="task_alt" title="Practice Tasks" items={topic.practice_tasks} />
+            <ResourceBlock icon="quiz" title="Quick Checks" items={topic.quick_checks} />
+            <ResourceBlock icon="history_edu" title="PYQ Concepts" items={topic.pyq_concepts} />
+            <MistakeDrill topic={topic} />
+          </div>
+          <TopicQuiz topic={topic} />
+          <PYQMatchesBlock topic={topic} />
+        </>
+      )}
+
+      {activeTab === 'Revise' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FocusTimer topic={topic} />
+            <ConfidenceMeter topic={topic} />
+            <TextBlock icon="summarize" title="Revision Notes" text={revisionNotes} />
+            <ResourceBlock icon="warning" title="Common Mistakes" items={topic.common_mistakes} />
+          </div>
+          <FlashcardDeck topic={topic} />
+          <RevisionScheduleBlock topic={topic} />
+        </>
+      )}
+
+      {activeTab === 'Videos' && (
+        <div className="space-y-5">
+          <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface-container-low flex items-center justify-center">
+            {firstVideo?.embed_url ? (
+              <iframe
+                className="h-full w-full"
+                src={firstVideo.embed_url}
+                title={firstVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 text-text-muted px-4 text-center">
+                <span className="material-symbols-outlined text-4xl text-primary">smart_display</span>
+                <p className="font-label-md text-label-md">Video lecture slot ready</p>
+              </div>
+            )}
+          </div>
+          <VideoLinksBlock topic={topic} />
+          <ReferenceLinksBlock topic={topic} />
+        </div>
+      )}
+
+      {activeTab === 'AI Tutor' && <AITutorBlock topic={topic} />}
+    </div>
+  );
+}
+
+function PYQMatchesBlock({ topic }: { topic: LearningTopic }) {
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">history_edu</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Matched PYQ Practice</h4>
+      </div>
+      {topic.pyq_matches.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {topic.pyq_matches.map((match) => (
+            <div key={`${match.chapter}-${match.name}`} className="rounded-lg border border-border bg-surface-container-lowest p-3">
+              <p className="font-label-md text-label-md text-text-primary">{match.name}</p>
+              <p className="mt-1 font-label-sm text-label-sm text-text-muted">{match.question_count} questions</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="font-body-md text-body-md text-text-muted">PYQ matches will appear here as this topic is linked to papers.</p>
+      )}
+    </div>
+  );
+}
+
+function VideoLinksBlock({ topic }: { topic: LearningTopic }) {
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">smart_display</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Video Links</h4>
+      </div>
+      <div className="space-y-2">
+        {topic.video_lectures.map((lecture) => (
+          <a
+            key={lecture.url}
+            href={lecture.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2 text-text-primary hover:border-primary/40 transition-colors"
+          >
+            <span className="font-label-md text-label-md">{lecture.title}</span>
+            <span className="material-symbols-outlined text-sm text-primary">open_in_new</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReferenceLinksBlock({ topic }: { topic: LearningTopic }) {
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">link</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Reference Links</h4>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {topic.reference_links.map((link) => (
+          <a
+            key={link.url}
+            href={link.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2 text-text-primary hover:border-primary/40 transition-colors"
+          >
+            <span>
+              <span className="block font-label-md text-label-md">{link.title}</span>
+              <span className="block font-label-sm text-label-sm text-text-muted capitalize">{link.type}</span>
+            </span>
+            <span className="material-symbols-outlined text-sm text-primary">open_in_new</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AITutorBlock({ topic }: { topic: LearningTopic }) {
+  const actions = [
+    `Explain ${topic.title} simpler`,
+    `Give one worked example on ${topic.concepts[0] ?? topic.title}`,
+    `Generate 5 questions from ${topic.title}`,
+    `Show related GATE PYQ patterns`,
+    `Summarize this topic for revision`,
+    `Teach me interactively`,
+  ];
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">auto_awesome</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">AI Tutor Actions</h4>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {actions.map((action) => (
+          <button
+            key={action}
+            className="rounded-lg border border-border bg-surface-container-lowest px-4 py-3 text-left font-label-md text-label-md text-text-primary hover:border-primary/40"
+          >
+            {action}
+          </button>
+        ))}
       </div>
     </div>
   );
