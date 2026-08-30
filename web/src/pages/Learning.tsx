@@ -636,6 +636,7 @@ function TopicPanel({
         <StudyQuest topic={topic} />
         <ExamSprint topic={topic} />
         <ConfidenceMeter topic={topic} />
+        <MistakeDrill topic={topic} />
         <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
         <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
         <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
@@ -948,6 +949,47 @@ function ConfidenceMeter({ topic }: { topic: LearningTopic }) {
       </div>
       <p className="mt-3 font-label-md text-label-md text-text-primary">{level ? labels[level - 1] : 'Rate your confidence'}</p>
       <p className="mt-1 font-body-sm text-body-sm text-text-muted leading-relaxed">{nextAction}</p>
+    </div>
+  );
+}
+
+function MistakeDrill({ topic }: { topic: LearningTopic }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const mistakes = topic.common_mistakes.length ? topic.common_mistakes : ['Skipping edge cases before checking the final answer.'];
+  const mistake = mistakes[activeIndex % mistakes.length];
+  const correction = topic.quick_checks[activeIndex % Math.max(1, topic.quick_checks.length)] ?? 'Explain the correct reasoning in one clean sentence.';
+
+  useEffect(() => {
+    setActiveIndex(0);
+    setRevealed(false);
+  }, [topic.slug]);
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5 min-h-[210px]">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">rule</span>
+          <h4 className="font-headline-sm text-headline-sm text-text-primary">Mistake Drill</h4>
+        </div>
+        <span className="font-label-sm text-label-sm text-text-muted">{activeIndex + 1}/{mistakes.length}</span>
+      </div>
+      <p className="font-label-md text-label-md text-text-primary leading-relaxed">{mistake}</p>
+      {revealed && <p className="mt-3 rounded-lg bg-primary-fixed px-3 py-2 font-body-sm text-body-sm text-primary leading-relaxed">{correction}</p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={() => setRevealed((value) => !value)} className="rounded-lg bg-primary px-4 py-2 font-label-sm text-label-sm text-on-primary">
+          {revealed ? 'Hide Fix' : 'Show Fix'}
+        </button>
+        <button
+          onClick={() => {
+            setActiveIndex((index) => (index + 1) % mistakes.length);
+            setRevealed(false);
+          }}
+          className="rounded-lg border border-border px-4 py-2 font-label-sm text-label-sm text-text-muted"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }

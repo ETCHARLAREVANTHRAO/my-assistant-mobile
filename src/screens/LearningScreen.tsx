@@ -342,6 +342,7 @@ function TopicPanel({
       <StudyQuestCard topic={topic} />
       <ExamSprintCard topic={topic} />
       <ConfidenceMeterCard topic={topic} />
+      <MistakeDrillCard topic={topic} />
       <ListCard title="Prerequisites" items={topic.prerequisites} />
       <ListCard title="Learning Outcomes" items={topic.learning_outcomes} />
       <ListCard title="Core Concepts" items={topic.concepts} />
@@ -565,6 +566,44 @@ function ConfidenceMeterCard({ topic }: { topic: LearningTopic }) {
   );
 }
 
+function MistakeDrillCard({ topic }: { topic: LearningTopic }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const mistakes = topic.common_mistakes.length ? topic.common_mistakes : ['Skipping edge cases before checking the final answer.'];
+  const mistake = mistakes[activeIndex % mistakes.length];
+  const correction = topic.quick_checks[activeIndex % Math.max(1, topic.quick_checks.length)] ?? 'Explain the correct reasoning in one clean sentence.';
+
+  useEffect(() => {
+    setActiveIndex(0);
+    setRevealed(false);
+  }, [topic.slug]);
+
+  return (
+    <Card>
+      <View style={local.cardHeaderRow}>
+        <Text style={local.cardTitle}>Mistake Drill</Text>
+        <Text style={local.videoMeta}>{activeIndex + 1}/{mistakes.length}</Text>
+      </View>
+      <Text style={local.videoTitle}>{mistake}</Text>
+      {revealed ? <Text style={local.drillFix}>{correction}</Text> : null}
+      <View style={local.progressWrap}>
+        <TouchableOpacity style={local.primaryAction} onPress={() => setRevealed((value) => !value)}>
+          <Text style={local.primaryActionText}>{revealed ? 'Hide Fix' : 'Show Fix'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={local.progressButton}
+          onPress={() => {
+            setActiveIndex((index) => (index + 1) % mistakes.length);
+            setRevealed(false);
+          }}
+        >
+          <Text style={local.progressText}>Next</Text>
+        </TouchableOpacity>
+      </View>
+    </Card>
+  );
+}
+
 function DiagramCard({ topic }: { topic: LearningTopic }) {
   if (!topic.diagram) return null;
   return (
@@ -749,6 +788,7 @@ const local = StyleSheet.create({
   confidenceButton: { flex: 1, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center', backgroundColor: theme.bg },
   confidenceButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   confidenceNumber: { color: theme.muted, fontWeight: '900', fontSize: 12 },
+  drillFix: { color: theme.primary, fontWeight: '700', fontSize: 12, lineHeight: 18, backgroundColor: theme.primaryFixed, borderRadius: 9, padding: 10, marginTop: 10 },
   topicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   saveButton: { marginTop: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
   saveText: { color: theme.primary, fontWeight: '900', fontSize: 12 },
