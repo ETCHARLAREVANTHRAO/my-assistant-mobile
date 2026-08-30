@@ -340,6 +340,7 @@ function TopicPanel({
       <DiagramCard topic={topic} />
       <FocusTimerCard topic={topic} />
       <StudyQuestCard topic={topic} />
+      <ExamSprintCard topic={topic} />
       <ListCard title="Prerequisites" items={topic.prerequisites} />
       <ListCard title="Learning Outcomes" items={topic.learning_outcomes} />
       <ListCard title="Core Concepts" items={topic.concepts} />
@@ -502,6 +503,27 @@ function StudyQuestCard({ topic }: { topic: LearningTopic }) {
           <Text style={local.questMark}>{done[index] ? '✓' : '○'}</Text>
           <Text style={local.questText}>{step}</Text>
         </TouchableOpacity>
+      ))}
+    </Card>
+  );
+}
+
+function ExamSprintCard({ topic }: { topic: LearningTopic }) {
+  const cards = [
+    { label: 'Must Know', value: topic.formula_sheet[0] ?? topic.concepts[0] ?? topic.title },
+    { label: 'PYQ Trigger', value: topic.pyq_concepts[0] ?? topic.concepts[1] ?? topic.title },
+    { label: 'Avoid', value: topic.common_mistakes[0] ?? 'Do not skip edge cases.' },
+    { label: 'Do Now', value: topic.practice_tasks[0] ?? topic.quick_checks[0] ?? 'Solve one previous-year style question.' },
+  ];
+
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Exam Sprint</Text>
+      {cards.map((card) => (
+        <View key={card.label} style={local.sprintRow}>
+          <Text style={local.sprintLabel}>{card.label}</Text>
+          <Text style={local.sprintText}>{card.value}</Text>
+        </View>
       ))}
     </Card>
   );
@@ -684,6 +706,9 @@ const local = StyleSheet.create({
   questStepDone: { borderColor: theme.success, backgroundColor: '#ecfdf5' },
   questMark: { color: theme.primary, fontWeight: '900', fontSize: 14, width: 18 },
   questText: { color: theme.text, fontSize: 12, lineHeight: 18, fontWeight: '700', flex: 1 },
+  sprintRow: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 11, backgroundColor: theme.bg, marginBottom: 8 },
+  sprintLabel: { color: theme.primary, fontWeight: '900', fontSize: 11, marginBottom: 3 },
+  sprintText: { color: theme.text, fontWeight: '700', fontSize: 12, lineHeight: 18 },
   topicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   saveButton: { marginTop: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
   saveText: { color: theme.primary, fontWeight: '900', fontSize: 12 },

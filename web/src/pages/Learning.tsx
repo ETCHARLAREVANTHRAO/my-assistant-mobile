@@ -634,6 +634,7 @@ function TopicPanel({
         <DiagramBlock topic={topic} />
         <FocusTimer topic={topic} />
         <StudyQuest topic={topic} />
+        <ExamSprint topic={topic} />
         <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
         <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
         <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
@@ -873,6 +874,35 @@ function StudyQuest({ topic }: { topic: LearningTopic }) {
             <span className="material-symbols-outlined text-base text-primary">{done[index] ? 'check_circle' : 'radio_button_unchecked'}</span>
             <span className="font-body-sm text-body-sm text-text-primary leading-relaxed">{step}</span>
           </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExamSprint({ topic }: { topic: LearningTopic }) {
+  const cards = [
+    { icon: 'functions', label: 'Must Know', value: topic.formula_sheet[0] ?? topic.concepts[0] ?? topic.title },
+    { icon: 'history_edu', label: 'PYQ Trigger', value: topic.pyq_concepts[0] ?? topic.concepts[1] ?? topic.title },
+    { icon: 'warning', label: 'Avoid', value: topic.common_mistakes[0] ?? 'Do not skip edge cases.' },
+    { icon: 'edit_note', label: 'Do Now', value: topic.practice_tasks[0] ?? topic.quick_checks[0] ?? 'Solve one previous-year style question.' },
+  ];
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5 min-h-[210px]">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">bolt</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Exam Sprint</h4>
+      </div>
+      <div className="grid grid-cols-1 gap-2">
+        {cards.map((card) => (
+          <div key={card.label} className="flex items-start gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2">
+            <span className="material-symbols-outlined text-base text-primary">{card.icon}</span>
+            <span>
+              <span className="block font-label-sm text-label-sm text-text-muted">{card.label}</span>
+              <span className="block font-body-sm text-body-sm text-text-primary leading-relaxed">{card.value}</span>
+            </span>
+          </div>
         ))}
       </div>
     </div>
