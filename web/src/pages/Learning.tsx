@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import {
-  learningDownloadAllPdf,
   learningDownloadSubjectPdf,
   learningGetProgress,
   learningGetSyllabus,
@@ -175,44 +174,6 @@ export default function Learning() {
     URL.revokeObjectURL(url);
   }
 
-  function downloadAllSheets() {
-    const body = subjects.map((subject) => [
-      `# ${subject.name}`,
-      '',
-      subject.description,
-      '',
-      '## Roadmap',
-      ...subject.roadmap.map((item) => `- ${item}`),
-      '',
-      '## Exam Strategy',
-      ...subject.exam_strategy.map((item) => `- ${item}`),
-      '',
-      '## Topics',
-      ...subject.topics.flatMap((topic) => [
-        '',
-        `### ${topic.title}`,
-        `Difficulty: ${topic.difficulty}`,
-        `Estimated study time: ${topic.estimated_study_minutes} minutes`,
-        '',
-        'Concepts:',
-        ...topic.concepts.map((item) => `- ${item}`),
-        '',
-        'Formula Sheet:',
-        ...topic.formula_sheet.map((item) => `- ${item}`),
-        '',
-        'Quick Checks:',
-        ...topic.quick_checks.map((item) => `- ${item}`),
-      ]),
-    ].join('\n')).join('\n\n---\n\n');
-    const blob = new Blob([body], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'complete-cs-learning-bank.md';
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
   function saveBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -220,10 +181,6 @@ export default function Learning() {
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
-  }
-
-  function downloadAllPdf() {
-    learningDownloadAllPdf().then((blob) => saveBlob(blob, 'complete-cs-learning-bank.pdf')).catch(() => {});
   }
 
   function downloadSubjectPdf(subject: LearningSubjectDetail) {
@@ -248,21 +205,6 @@ export default function Learning() {
             <Metric label="Mastered" value={masteredCount} />
           </div>
         </div>
-
-        <button
-          onClick={downloadAllSheets}
-          className="self-start inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 font-label-md text-label-md text-text-primary hover:border-primary/40"
-        >
-          <span className="material-symbols-outlined text-sm">download</span>
-          Download All Sheets
-        </button>
-        <button
-          onClick={downloadAllPdf}
-          className="self-start inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 font-label-md text-label-md text-text-primary hover:border-primary/40"
-        >
-          <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-          Download All PDF
-        </button>
 
         <div className="relative">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
