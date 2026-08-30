@@ -112,10 +112,61 @@ export default function Learning() {
   const savedCount = Object.values(bookmarks).filter(Boolean).length;
   const masteredCount = Object.values(progress).filter((value) => value === 'mastered').length;
   const revisedCount = Object.values(progress).filter((value) => value === 'revised' || value === 'mastered').length;
+  const flattenedTopics = subjects.flatMap((subject) =>
+    subject.topics.map((topic) => ({
+      subject,
+      topic,
+      key: topicKey(subject.slug, topic.slug),
+    })),
+  );
+  const continueItem =
+    flattenedTopics.find((item) => progress[item.key] === 'learning') ??
+    flattenedTopics.find((item) => progress[item.key] === 'revised') ??
+    flattenedTopics.find((item) => bookmarks[item.key]) ??
+    flattenedTopics[0];
+  const recommendedItems = flattenedTopics
+    .filter((item) => progress[item.key] !== 'mastered')
+    .sort((a, b) => {
+      const pyqDelta = b.topic.pyq_match_count - a.topic.pyq_match_count;
+      if (pyqDelta !== 0) return pyqDelta;
+      return a.topic.priority - b.topic.priority;
+    })
+    .slice(0, 3);
+  const learningGoals = [
+    { icon: 'track_changes', title: 'GATE CS', description: 'Syllabus, PYQs, revision, and mock-test flow.', match: 'operating-systems' },
+    { icon: 'work', title: 'Placements', description: 'DSA, CS fundamentals, aptitude, and interviews.', match: 'data-structures' },
+    { icon: 'computer', title: 'Master Computer Science', description: 'A clean core-CS curriculum from fundamentals to systems.', match: 'computer-organization' },
+    { icon: 'psychology', title: 'AI & Machine Learning', description: 'Math, ML, DL, NLP, and model-building foundations.', match: 'machine-learning' },
+    { icon: 'auto_awesome', title: 'Generative AI', description: 'Transformers, LLMs, RAG, agents, and modern AI apps.', match: 'generative-ai' },
+    { icon: 'rocket_launch', title: 'Build Projects', description: 'Turn topics into practical systems and portfolio work.', match: 'software-engineering' },
+  ];
+  const learningPaths = [
+    { title: 'GATE CS Roadmap', steps: ['Programming & DSA', 'Core CS', 'Mathematics', 'PYQ practice', 'Mock tests'] },
+    { title: 'AI/ML Roadmap', steps: ['Python', 'Math for AI', 'Machine Learning', 'Deep Learning', 'NLP', 'Generative AI'] },
+    { title: 'Placement Roadmap', steps: ['DSA patterns', 'DBMS/OS/CN', 'Aptitude', 'Interview prompts', 'Projects'] },
+    { title: 'Core CS Roadmap', steps: ['Programming', 'Data structures', 'Algorithms', 'Systems', 'Software engineering'] },
+  ];
 
   function chooseSubject(subject: LearningSubjectDetail) {
     setActiveSubjectSlug(subject.slug);
     setActiveTopicSlug(subject.topics[0]?.slug ?? '');
+  }
+
+  function jumpToTopic(subject: LearningSubjectDetail, topic: LearningTopic) {
+    setActiveSubjectSlug(subject.slug);
+    setActiveTopicSlug(topic.slug);
+    document.getElementById('explore-subjects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function chooseGoal(match: string) {
+    const subject =
+      subjects.find((item) => item.slug === match) ??
+      subjects.find((item) => item.slug.includes(match) || item.name.toLowerCase().includes(match.replace(/-/g, ' '))) ??
+      subjects[0];
+    if (subject) {
+      chooseSubject(subject);
+      document.getElementById('explore-subjects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function topicKey(subjectSlug: string, topicSlug: string) {
@@ -264,6 +315,105 @@ export default function Learning() {
             Loading syllabus...
           </div>
         ) : (
+          <>
+          <section className="grid grid-cols-1 xl:grid-cols-12 gap-gutter items-start">
+            <div className="xl:col-span-5 bg-surface rounded-lg border border-border shadow-soft p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-primary">play_circle</span>
+                <h3 className="font-headline-sm text-headline-sm text-text-primary">Continue Learning</h3>
+              </div>
+              {continueItem ? (
+                <>
+                  <p className="font-label-sm text-label-sm text-text-muted">{continueItem.subject.name}</p>
+                  <h4 className="mt-1 font-headline-md text-headline-md text-text-primary">{continueItem.topic.title}</h4>
+                  <div className="mt-4 h-2 rounded-full bg-surface-container-low overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${progress[continueItem.key] === 'mastered' ? 100 : progress[continueItem.key] === 'revised' ? 72 : progress[continueItem.key] === 'learning' ? 42 : 12}%` }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => jumpToTopic(continueItem.subject, continueItem.topic)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-label-md text-label-md text-on-primary"
+                  >
+                    Continue
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
+                </>
+              ) : (
+                <p className="font-body-md text-body-md text-text-muted">Your first topic will appear here after the syllabus loads.</p>
+              )}
+            </div>
+
+            <div className="xl:col-span-7">
+              <div className="mb-3">
+                <h3 className="font-headline-sm text-headline-sm text-text-primary">Choose Your Goal</h3>
+                <p className="mt-1 font-body-sm text-body-sm text-text-muted">Pick a direction first, then use subjects as the detailed workspace.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {learningGoals.map((goal) => (
+                  <button
+                    key={goal.title}
+                    onClick={() => chooseGoal(goal.match)}
+                    className="text-left rounded-lg border border-border bg-surface p-4 shadow-soft hover:border-primary/40 hover:shadow-hover transition-all"
+                  >
+                    <span className="material-symbols-outlined text-primary">{goal.icon}</span>
+                    <span className="mt-2 block font-label-md text-label-md text-text-primary">{goal.title}</span>
+                    <span className="mt-1 block font-body-sm text-body-sm text-text-muted leading-relaxed">{goal.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+            <div className="lg:col-span-5 bg-surface rounded-lg border border-border shadow-soft p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-primary">recommend</span>
+                <h3 className="font-headline-sm text-headline-sm text-text-primary">Recommended Next</h3>
+              </div>
+              <div className="space-y-3">
+                {recommendedItems.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => jumpToTopic(item.subject, item.topic)}
+                    className="w-full rounded-lg border border-border bg-surface-container-lowest p-3 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <span className="block font-label-sm text-label-sm text-text-muted">{item.subject.name}</span>
+                    <span className="mt-1 block font-label-md text-label-md text-text-primary">{item.topic.title}</span>
+                    <span className="mt-1 block font-label-sm text-label-sm text-primary">{item.topic.pyq_match_count} linked PYQs</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 bg-surface rounded-lg border border-border shadow-soft p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-primary">route</span>
+                <h3 className="font-headline-sm text-headline-sm text-text-primary">Learning Paths</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {learningPaths.map((path) => (
+                  <div key={path.title} className="rounded-lg border border-border bg-surface-container-lowest p-4">
+                    <h4 className="font-label-md text-label-md text-text-primary">{path.title}</h4>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {path.steps.map((step, index) => (
+                        <span key={step} className="rounded-full border border-border bg-surface px-3 py-1 font-label-sm text-label-sm text-text-muted">
+                          {index + 1}. {step}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="explore-subjects" className="scroll-mt-24">
+            <div className="mb-4">
+              <h3 className="font-headline-md text-headline-md text-text-primary">Explore All Subjects</h3>
+              <p className="mt-1 font-body-md text-body-md text-text-muted">Use this detailed workspace when you want the full notes, videos, quizzes, PYQs, and revision tools.</p>
+            </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
             <aside className="lg:col-span-4 xl:col-span-3 space-y-3">
               {visibleSubjects.map((subject) => {
@@ -383,6 +533,8 @@ export default function Learning() {
               </section>
             )}
           </div>
+          </section>
+          </>
         )}
       </div>
     </Layout>
