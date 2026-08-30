@@ -635,6 +635,7 @@ function TopicPanel({
         <FocusTimer topic={topic} />
         <StudyQuest topic={topic} />
         <ExamSprint topic={topic} />
+        <ConfidenceMeter topic={topic} />
         <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
         <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
         <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
@@ -905,6 +906,48 @@ function ExamSprint({ topic }: { topic: LearningTopic }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ConfidenceMeter({ topic }: { topic: LearningTopic }) {
+  const [level, setLevel] = useState(0);
+
+  useEffect(() => {
+    setLevel(0);
+  }, [topic.slug]);
+
+  const labels = ['Lost', 'Warm', 'Steady', 'Ready', 'Exam ready'];
+  const nextAction =
+    level >= 4
+      ? topic.pyq_concepts[0] ?? 'Attempt a timed PYQ set now.'
+      : level >= 2
+        ? topic.practice_tasks[0] ?? 'Solve two practice problems before moving on.'
+        : topic.deep_notes[0]?.heading ?? 'Start with the first notes section.';
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5 min-h-[210px]">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">speed</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Confidence Meter</h4>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {labels.map((label, index) => (
+          <button
+            key={label}
+            onClick={() => setLevel(index + 1)}
+            className={
+              index < level
+                ? 'rounded-lg bg-primary px-2 py-3 font-label-sm text-label-sm text-on-primary'
+                : 'rounded-lg border border-border bg-surface-container-lowest px-2 py-3 font-label-sm text-label-sm text-text-muted hover:border-primary/40'
+            }
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 font-label-md text-label-md text-text-primary">{level ? labels[level - 1] : 'Rate your confidence'}</p>
+      <p className="mt-1 font-body-sm text-body-sm text-text-muted leading-relaxed">{nextAction}</p>
     </div>
   );
 }

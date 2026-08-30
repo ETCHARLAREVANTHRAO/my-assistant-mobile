@@ -341,6 +341,7 @@ function TopicPanel({
       <FocusTimerCard topic={topic} />
       <StudyQuestCard topic={topic} />
       <ExamSprintCard topic={topic} />
+      <ConfidenceMeterCard topic={topic} />
       <ListCard title="Prerequisites" items={topic.prerequisites} />
       <ListCard title="Learning Outcomes" items={topic.learning_outcomes} />
       <ListCard title="Core Concepts" items={topic.concepts} />
@@ -500,7 +501,7 @@ function StudyQuestCard({ topic }: { topic: LearningTopic }) {
           style={[local.questStep, done[index] && local.questStepDone]}
           onPress={() => setDone((current) => ({ ...current, [index]: !current[index] }))}
         >
-          <Text style={local.questMark}>{done[index] ? '✓' : '○'}</Text>
+          <Text style={local.questMark}>{done[index] ? '[x]' : '[ ]'}</Text>
           <Text style={local.questText}>{step}</Text>
         </TouchableOpacity>
       ))}
@@ -525,6 +526,41 @@ function ExamSprintCard({ topic }: { topic: LearningTopic }) {
           <Text style={local.sprintText}>{card.value}</Text>
         </View>
       ))}
+    </Card>
+  );
+}
+
+function ConfidenceMeterCard({ topic }: { topic: LearningTopic }) {
+  const [level, setLevel] = useState(0);
+
+  useEffect(() => {
+    setLevel(0);
+  }, [topic.slug]);
+
+  const labels = ['Lost', 'Warm', 'Steady', 'Ready', 'Exam ready'];
+  const nextAction =
+    level >= 4
+      ? topic.pyq_concepts[0] ?? 'Attempt a timed PYQ set now.'
+      : level >= 2
+        ? topic.practice_tasks[0] ?? 'Solve two practice problems before moving on.'
+        : topic.deep_notes[0]?.heading ?? 'Start with the first notes section.';
+
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Confidence Meter</Text>
+      <View style={local.confidenceRow}>
+        {labels.map((label, index) => (
+          <TouchableOpacity
+            key={label}
+            style={[local.confidenceButton, index < level && local.confidenceButtonActive]}
+            onPress={() => setLevel(index + 1)}
+          >
+            <Text style={[local.confidenceNumber, index < level && { color: '#fff' }]}>{index + 1}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={local.sprintLabel}>{level ? labels[level - 1] : 'Rate your confidence'}</Text>
+      <Text style={local.sprintText}>{nextAction}</Text>
     </Card>
   );
 }
@@ -709,6 +745,10 @@ const local = StyleSheet.create({
   sprintRow: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 11, backgroundColor: theme.bg, marginBottom: 8 },
   sprintLabel: { color: theme.primary, fontWeight: '900', fontSize: 11, marginBottom: 3 },
   sprintText: { color: theme.text, fontWeight: '700', fontSize: 12, lineHeight: 18 },
+  confidenceRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  confidenceButton: { flex: 1, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center', backgroundColor: theme.bg },
+  confidenceButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
+  confidenceNumber: { color: theme.muted, fontWeight: '900', fontSize: 12 },
   topicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   saveButton: { marginTop: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
   saveText: { color: theme.primary, fontWeight: '900', fontSize: 12 },
