@@ -684,6 +684,7 @@ export interface AdminContentPayload {
   short_tricks: ResourceShortTrick[];
   exam_info: any;
   mentor_sessions: Array<{ title: string; status: string }>;
+  learning_overrides: Record<string, any>;
 }
 
 export async function adminGetContent(): Promise<AdminContentPayload> {
@@ -763,17 +764,88 @@ export interface VideoLecture {
   duration_minutes: number | null;
 }
 
+export interface LearningReferenceLink {
+  title: string;
+  url: string;
+  type: string;
+}
+
+export interface LearningFlashcard {
+  front: string;
+  back: string;
+}
+
+export interface LearningDiagram {
+  title: string;
+  type: string;
+  nodes: string[];
+  edges: { from: string; to: string }[];
+}
+
+export interface LearningQuizQuestion {
+  question: string;
+  options: string[];
+  answer: string;
+  explanation: string;
+}
+
+export interface LearningWorkedExample {
+  title: string;
+  problem: string;
+  solution: string;
+}
+
+export interface LearningNoteSection {
+  heading: string;
+  body: string;
+}
+
+export interface LearningRevisionScheduleItem {
+  when: string;
+  task: string;
+}
+
+export interface LearningPYQMatch {
+  subject: string;
+  chapter: string;
+  name: string;
+  question_count: number;
+}
+
 export interface LearningTopic {
   slug: string;
   title: string;
   priority: number;
+  difficulty: string;
+  estimated_study_minutes: number;
   status: string;
   concepts: string[];
   written_notes: string;
   revision_summary: string;
+  notes_by_language: Record<string, string>;
+  revision_by_language: Record<string, string>;
+  deep_notes: LearningNoteSection[];
   formula_sheet: string[];
   mind_map: string[];
   pyq_concepts: string[];
+  common_mistakes: string[];
+  practice_tasks: string[];
+  study_flow: string[];
+  prerequisites: string[];
+  learning_outcomes: string[];
+  quick_checks: string[];
+  flashcards: LearningFlashcard[];
+  interview_prompts: string[];
+  diagram: LearningDiagram | null;
+  quiz_questions: LearningQuizQuestion[];
+  worked_examples: LearningWorkedExample[];
+  memory_hooks: string[];
+  reading_pointers: string[];
+  revision_schedule: LearningRevisionScheduleItem[];
+  mastery_rubric: string[];
+  pyq_matches: LearningPYQMatch[];
+  pyq_match_count: number;
+  reference_links: LearningReferenceLink[];
   video_lectures: VideoLecture[];
 }
 
@@ -786,7 +858,20 @@ export interface LearningSubjectSummary {
 }
 
 export interface LearningSubjectDetail extends LearningSubjectSummary {
+  pyq_subject: string;
+  pyq_available: boolean;
+  curated_resources: LearningReferenceLink[];
+  roadmap: string[];
+  exam_strategy: string[];
+  milestones: string[];
   topics: LearningTopic[];
+}
+
+export interface LearningProgressItem {
+  topic_key: string;
+  status: string;
+  bookmarked: boolean;
+  updated_at: string | null;
 }
 
 export async function learningGetSyllabus(): Promise<LearningSubjectDetail[]> {
@@ -796,5 +881,25 @@ export async function learningGetSyllabus(): Promise<LearningSubjectDetail[]> {
 
 export async function learningGetSubject(subjectSlug: string): Promise<LearningSubjectDetail> {
   const { data } = await api.get<LearningSubjectDetail>(`/learning/subjects/${subjectSlug}`);
+  return data;
+}
+
+export async function learningGetProgress(): Promise<LearningProgressItem[]> {
+  const { data } = await api.get<{ items: LearningProgressItem[] }>('/learning/progress');
+  return data.items;
+}
+
+export async function learningUpdateProgress(topicKey: string, payload: { status?: string; bookmarked?: boolean }): Promise<LearningProgressItem> {
+  const { data } = await api.put<LearningProgressItem>(`/learning/progress/${encodeURIComponent(topicKey)}`, payload);
+  return data;
+}
+
+export async function learningDownloadSubjectPdf(subjectSlug: string): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/learning/subjects/${subjectSlug}/cheat-sheet.pdf`, { responseType: 'blob' });
+  return data;
+}
+
+export async function learningDownloadAllPdf(): Promise<Blob> {
+  const { data } = await api.get<Blob>('/learning/cheat-sheet.pdf', { responseType: 'blob' });
   return data;
 }

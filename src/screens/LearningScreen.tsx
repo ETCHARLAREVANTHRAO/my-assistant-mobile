@@ -1,16 +1,54 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { Card, EmptyState, Pill, ScreenShell, theme } from '../components/MobileScaffold';
 import { learningApi, LearningSubjectDetail, LearningTopic } from '../services/api';
 
+const progressOptions = ['not-started', 'learning', 'revised', 'mastered'] as const;
+type TopicProgress = (typeof progressOptions)[number];
+
 export default function LearningScreen() {
+  const navigation = useNavigation<any>();
   const [subjects, setSubjects] = useState<LearningSubjectDetail[]>([]);
   const [subjectSlug, setSubjectSlug] = useState('');
   const [topicSlug, setTopicSlug] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const [progress, setProgress] = useState<Record<string, TopicProgress>>({});
+  const [bookmarks, setBookmarks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    Promise.all([
+      AsyncStorage.getItem('learning-topic-progress'),
+      AsyncStorage.getItem('learning-topic-bookmarks'),
+    ])
+      .then(([storedProgress, storedBookmarks]) => {
+        setProgress(JSON.parse(storedProgress || '{}'));
+        setBookmarks(JSON.parse(storedBookmarks || '{}'));
+      })
+      .catch(() => {});
+
+    learningApi.progress()
+      .then((items) => {
+        const nextProgress: Record<string, TopicProgress> = {};
+        const nextBookmarks: Record<string, boolean> = {};
+        for (const item of items) {
+          if (progressOptions.includes(item.status as TopicProgress)) {
+            nextProgress[item.topic_key] = item.status as TopicProgress;
+          }
+          nextBookmarks[item.topic_key] = item.bookmarked;
+        }
+        setProgress(nextProgress);
+        setBookmarks(nextBookmarks);
+        AsyncStorage.setItem('learning-topic-progress', JSON.stringify(nextProgress)).catch(() => {});
+        AsyncStorage.setItem('learning-topic-bookmarks', JSON.stringify(nextBookmarks)).catch(() => {});
+      })
+      .catch(() => {});
+
     learningApi.syllabus()
       .then((data) => {
         setSubjects(data);
@@ -21,8 +59,88 @@ export default function LearningScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  const activeSubject = useMemo(() => subjects.find((s) => s.slug === subjectSlug) ?? subjects[0], [subjects, subjectSlug]);
-  const activeTopic = useMemo(() => activeSubject?.topics.find((t) => t.slug === topicSlug) ?? activeSubject?.topics[0], [activeSubject, topicSlug]);
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const visibleSubjects = useMemo(
+    () =>
+      subjects.filter((subject) => {
+        const hasSaved = subject.topics.some((topic) => bookmarks[`${subject.slug}:${topic.slug}`]);
+        if (showSavedOnly && !hasSaved) return false;
+        if (!normalizedSearch) return true;
+            const subjectText = `${subject.name} ${subject.description}`.toLowerCase();
+            const topicHit = subject.topics.some((topic) =>
+              `${topic.title} ${topic.concepts.join(' ')} ${topic.pyq_concepts.join(' ')}`.toLowerCase().includes(normalizedSearch),
+            );
+            return subjectText.includes(normalizedSearch) || topicHit;
+          }),
+    [bookmarks, normalizedSearch, showSavedOnly, subjects],
+  );
+
+  const activeSubject = useMemo(
+    () => visibleSubjects.find((s) => s.slug === subjectSlug) ?? visibleSubjects[0] ?? subjects[0],
+    [subjects, subjectSlug, visibleSubjects],
+  );
+  const visibleTopics = useMemo(() => {
+    if (!activeSubject) return [];
+    return activeSubject.topics.filter((topic) => {
+      if (showSavedOnly && !bookmarks[`${activeSubject.slug}:${topic.slug}`]) return false;
+      if (!normalizedSearch) return true;
+      return `${topic.title} ${topic.concepts.join(' ')} ${topic.pyq_concepts.join(' ')}`.toLowerCase().includes(normalizedSearch);
+    });
+  }, [activeSubject, bookmarks, normalizedSearch, showSavedOnly]);
+  const activeTopic = useMemo(
+    () => visibleTopics.find((t) => t.slug === topicSlug) ?? visibleTopics[0] ?? activeSubject?.topics[0],
+    [activeSubject, topicSlug, visibleTopics],
+  );
+  const savedCount = Object.values(bookmarks).filter(Boolean).length;
+  const revisedCount = Object.values(progress).filter((value) => value === 'revised' || value === 'mastered').length;
+  const masteredCount = Object.values(progress).filter((value) => value === 'mastered').length;
+
+  function topicKey(subject: string, topic: string) {
+    return `${subject}:${topic}`;
+  }
+
+  async function updateProgress(key: string, value: TopicProgress) {
+    const next = { ...progress, [key]: value };
+    setProgress(next);
+    await AsyncStorage.setItem('learning-topic-progress', JSON.stringify(next));
+    learningApi.updateProgress(key, { status: value }).catch(() => {});
+  }
+
+  async function toggleBookmark(key: string) {
+    const next = { ...bookmarks, [key]: !bookmarks[key] };
+    setBookmarks(next);
+    await AsyncStorage.setItem('learning-topic-bookmarks', JSON.stringify(next));
+    learningApi.updateProgress(key, { bookmarked: next[key] }).catch(() => {});
+  }
+
+  function shareSubjectSheet(subject: LearningSubjectDetail) {
+    const message = [
+      subject.name,
+      '',
+      subject.description,
+      '',
+      'Roadmap',
+      ...subject.roadmap.map((item) => `- ${item}`),
+      '',
+      'Exam Strategy',
+      ...subject.exam_strategy.map((item) => `- ${item}`),
+      '',
+      'Topics',
+      ...subject.topics.map((topic) => `- ${topic.title}: ${topic.difficulty}, ${topic.estimated_study_minutes} min`),
+    ].join('\n');
+    Share.share({ title: `${subject.name} Complete Sheet`, message }).catch(() => {});
+  }
+
+  function shareAllSheets() {
+    const message = subjects.map((subject) => [
+      subject.name,
+      subject.description,
+      '',
+      ...subject.topics.map((topic) => `- ${topic.title}: ${topic.difficulty}, ${topic.estimated_study_minutes} min`),
+    ].join('\n')).join('\n\n');
+    Share.share({ title: 'Complete CS Learning Bank', message }).catch(() => {});
+  }
 
   return (
     <ScreenShell title="Learning" subtitle="Subject-wise GATE CS syllabus, notes, formulas, and PYQ concepts.">
@@ -34,8 +152,36 @@ export default function LearningScreen() {
         <EmptyState title="No syllabus found" />
       ) : (
         <ScrollView contentContainerStyle={local.scroll}>
+          <View style={local.metrics}>
+            <Metric label="Saved" value={savedCount} />
+            <Metric label="Revised" value={revisedCount} />
+            <Metric label="Mastered" value={masteredCount} />
+          </View>
+          <TouchableOpacity style={local.filterButton} onPress={shareAllSheets}>
+            <Text style={local.filterText}>Share all sheets</Text>
+          </TouchableOpacity>
+
+          <TextInput
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            placeholder="Search subjects, topics, concepts, PYQ"
+            placeholderTextColor={theme.muted}
+            style={local.search}
+          />
+          <TouchableOpacity style={[local.filterButton, showSavedOnly && local.filterButtonActive]} onPress={() => setShowSavedOnly((value) => !value)}>
+            <Text style={[local.filterText, showSavedOnly && { color: '#fff' }]}>Saved only</Text>
+          </TouchableOpacity>
+          <View style={local.languageRow}>
+            <TouchableOpacity style={[local.languageButton, language === 'en' && local.languageButtonActive]} onPress={() => setLanguage('en')}>
+              <Text style={[local.filterText, language === 'en' && { color: '#fff' }]}>English</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[local.languageButton, language === 'hi' && local.languageButtonActive]} onPress={() => setLanguage('hi')}>
+              <Text style={[local.filterText, language === 'hi' && { color: '#fff' }]}>Hindi</Text>
+            </TouchableOpacity>
+          </View>
+
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            {subjects.map((subject) => {
+            {visibleSubjects.map((subject) => {
               const active = subject.slug === activeSubject.slug;
               return (
                 <TouchableOpacity
@@ -57,43 +203,336 @@ export default function LearningScreen() {
               <Text style={local.subjectTitle}>{activeSubject.name}</Text>
               <Pill label={activeSubject.exam_weight} tone={activeSubject.exam_weight === 'Very High' ? 'danger' : 'primary'} />
             </View>
+            {activeSubject.pyq_available ? <Pill label="PYQ linked" tone="success" /> : null}
             <Text style={local.muted}>{activeSubject.description}</Text>
+            <TouchableOpacity style={local.saveButton} onPress={() => shareSubjectSheet(activeSubject)}>
+              <Text style={local.saveText}>Share subject sheet</Text>
+            </TouchableOpacity>
           </Card>
+
+          <ListCard title="Subject Roadmap" items={activeSubject.roadmap} />
+          <ListCard title="Exam Strategy" items={activeSubject.exam_strategy} />
+          <ListCard title="Milestones" items={activeSubject.milestones} />
+          <SubjectResourceCard subject={activeSubject} />
 
           <Text style={local.section}>Topics</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            {activeSubject.topics.map((topic) => (
+            {visibleTopics.map((topic) => (
               <TouchableOpacity
                 key={topic.slug}
                 style={[local.topicChip, topic.slug === activeTopic.slug && local.topicChipActive]}
                 onPress={() => setTopicSlug(topic.slug)}
               >
                 <Text style={[local.topicChipText, topic.slug === activeTopic.slug && { color: '#fff' }]}>{topic.title}</Text>
+                {bookmarks[topicKey(activeSubject.slug, topic.slug)] ? <Text style={local.bookmarkMark}>Saved</Text> : null}
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <TopicPanel topic={activeTopic} />
+          <TopicPanel
+            topic={activeTopic}
+            progressValue={progress[topicKey(activeSubject.slug, activeTopic.slug)] ?? 'not-started'}
+            bookmarked={!!bookmarks[topicKey(activeSubject.slug, activeTopic.slug)]}
+            onProgress={(value) => updateProgress(topicKey(activeSubject.slug, activeTopic.slug), value)}
+            onBookmark={() => toggleBookmark(topicKey(activeSubject.slug, activeTopic.slug))}
+            onPractice={() => navigation.navigate('PYQTab', { practiceTopic: activeTopic.title, practiceSubject: activeSubject.pyq_subject })}
+            language={language}
+          />
         </ScrollView>
       )}
     </ScreenShell>
   );
 }
 
-function TopicPanel({ topic }: { topic: LearningTopic }) {
+function SubjectResourceCard({ subject }: { subject: LearningSubjectDetail }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Curated Resources</Text>
+      {subject.curated_resources.map((link) => (
+        <TouchableOpacity key={link.url} style={local.videoRow} onPress={() => Linking.openURL(link.url)}>
+          <View style={{ flex: 1 }}>
+            <Text style={local.videoTitle}>{link.title}</Text>
+            <Text style={local.videoMeta}>{link.type}</Text>
+          </View>
+          <Text style={local.videoOpen}>Open</Text>
+        </TouchableOpacity>
+      ))}
+    </Card>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={local.metric}>
+      <Text style={local.metricLabel}>{label}</Text>
+      <Text style={local.metricValue}>{value}</Text>
+    </View>
+  );
+}
+
+function TopicPanel({
+  topic,
+  progressValue,
+  bookmarked,
+  onProgress,
+  onBookmark,
+  onPractice,
+  language,
+}: {
+  topic: LearningTopic;
+  progressValue: TopicProgress;
+  bookmarked: boolean;
+  onProgress: (value: TopicProgress) => void;
+  onBookmark: () => void;
+  onPractice: () => void;
+  language: 'en' | 'hi';
+}) {
+  const writtenNotes = topic.notes_by_language[language] || topic.written_notes;
+  const revisionNotes = topic.revision_by_language[language] || topic.revision_summary;
+  const shareCheatSheet = () => {
+    const message = [
+      topic.title,
+      '',
+      `Difficulty: ${topic.difficulty}`,
+      `Estimated study time: ${topic.estimated_study_minutes} minutes`,
+      '',
+      'Written Notes',
+      writtenNotes,
+      '',
+      'Formula Sheet',
+      ...topic.formula_sheet.map((item) => `- ${item}`),
+      '',
+      'PYQ Concepts',
+      ...topic.pyq_concepts.map((item) => `- ${item}`),
+    ].join('\n');
+    Share.share({ title: `${topic.title} Cheat Sheet`, message }).catch(() => {});
+  };
+
   return (
     <>
       <Card>
-        <Pill label={`Priority ${topic.priority}`} tone="amber" />
+        <View style={local.topicActions}>
+          <Pill label={`Priority ${topic.priority}`} tone="amber" />
+          <Pill label={topic.difficulty} tone={topic.difficulty === 'Hard' ? 'danger' : 'primary'} />
+          <Pill label={`${topic.estimated_study_minutes} min`} tone="primary" />
+          {topic.pyq_match_count > 0 ? <Pill label={`${topic.pyq_match_count} PYQs`} tone="success" /> : null}
+        </View>
         <Text style={local.topicTitle}>{topic.title}</Text>
-        <Text style={local.muted}>{topic.written_notes || topic.revision_summary || 'Study notes are ready for this topic.'}</Text>
+        <Text style={local.muted}>{writtenNotes || revisionNotes || 'Study notes are ready for this topic.'}</Text>
+        <TouchableOpacity style={local.saveButton} onPress={onBookmark}>
+          <Text style={local.saveText}>{bookmarked ? 'Saved topic' : 'Save topic'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={local.saveButton} onPress={shareCheatSheet}>
+          <Text style={local.saveText}>Share cheat sheet</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={local.primaryAction} onPress={onPractice}>
+          <Text style={local.primaryActionText}>Open PYQ practice</Text>
+        </TouchableOpacity>
+        <View style={local.progressWrap}>
+          {progressOptions.map((option) => (
+            <TouchableOpacity key={option} style={[local.progressButton, option === progressValue && local.progressButtonActive]} onPress={() => onProgress(option)}>
+              <Text style={[local.progressText, option === progressValue && { color: '#fff' }]}>{option.replace('-', ' ')}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </Card>
+      <TextCard title="Revision Summary" text={revisionNotes} />
+      <DiagramCard topic={topic} />
+      <ListCard title="Prerequisites" items={topic.prerequisites} />
+      <ListCard title="Learning Outcomes" items={topic.learning_outcomes} />
       <ListCard title="Core Concepts" items={topic.concepts} />
       <ListCard title="Formula Sheet" items={topic.formula_sheet.length ? topic.formula_sheet : topic.concepts.slice(0, 4)} />
       <ListCard title="Mind Map" items={topic.mind_map} />
+      <ListCard title="Study Flow" items={topic.study_flow} />
+      <ListCard title="Common Mistakes" items={topic.common_mistakes} />
+      <ListCard title="Practice Tasks" items={topic.practice_tasks} />
+      <ListCard title="Quick Checks" items={topic.quick_checks} />
+      <ListCard title="Interview Prompts" items={topic.interview_prompts} />
+      <ListCard title="Memory Hooks" items={topic.memory_hooks} />
+      <ListCard title="Reading Pointers" items={topic.reading_pointers} />
+      <ListCard title="Mastery Rubric" items={topic.mastery_rubric} />
+      <WorkedExamplesCard topic={topic} />
+      <DeepNotesCard topic={topic} />
+      <RevisionScheduleCard topic={topic} />
+      <FlashcardCard topic={topic} />
+      <TopicQuizCard topic={topic} />
       <ListCard title="PYQ Concepts" items={topic.pyq_concepts} />
-      <ListCard title="Video Lectures" items={topic.video_lectures.map((v) => `${v.title} - ${v.provider}`)} empty="Video slots are ready." />
+      <PYQMatchesCard topic={topic} />
+      <ReferenceCard topic={topic} />
+      <VideoCard topic={topic} />
     </>
+  );
+}
+
+function PYQMatchesCard({ topic }: { topic: LearningTopic }) {
+  if (!topic.pyq_matches.length) return null;
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Matched PYQ Practice</Text>
+      {topic.pyq_matches.map((match) => (
+        <View key={`${match.chapter}-${match.name}`} style={local.flashcard}>
+          <Text style={local.videoTitle}>{match.name}</Text>
+          <Text style={local.videoMeta}>{match.question_count} questions</Text>
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+function DeepNotesCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Deep Notes</Text>
+      {topic.deep_notes.map((section) => (
+        <View key={section.heading} style={local.flashcard}>
+          <Text style={local.videoTitle}>{section.heading}</Text>
+          <Text style={local.videoMeta}>{section.body}</Text>
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+function RevisionScheduleCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Revision Schedule</Text>
+      {topic.revision_schedule.map((item) => (
+        <View key={item.when} style={local.flashcard}>
+          <Text style={local.videoTitle}>{item.when}</Text>
+          <Text style={local.videoMeta}>{item.task}</Text>
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+function WorkedExamplesCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Worked Examples</Text>
+      {topic.worked_examples.map((example) => (
+        <View key={example.title} style={local.flashcard}>
+          <Text style={local.videoTitle}>{example.title}</Text>
+          <Text style={local.videoMeta}>{example.problem}</Text>
+          <Text style={local.exampleSolution}>{example.solution}</Text>
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+function DiagramCard({ topic }: { topic: LearningTopic }) {
+  if (!topic.diagram) return null;
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Concept Diagram</Text>
+      <View style={local.diagramWrap}>
+        {topic.diagram.nodes.map((node, index) => (
+          <Text key={node} style={[local.diagramNode, index === 0 && local.diagramNodeMain]}>{node}</Text>
+        ))}
+      </View>
+    </Card>
+  );
+}
+
+function TextCard({ title, text }: { title: string; text: string }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>{title}</Text>
+      <Text style={local.muted}>{text || 'Revision notes are ready for this topic.'}</Text>
+    </Card>
+  );
+}
+
+function TopicQuizCard({ topic }: { topic: LearningTopic }) {
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Topic Quiz</Text>
+      {topic.quiz_questions.map((question, index) => {
+        const selected = answers[index];
+        return (
+          <View key={question.question} style={local.quizQuestion}>
+            <Text style={local.videoTitle}>{question.question}</Text>
+            {question.options.map((option) => {
+              const isSelected = selected === option;
+              const isCorrect = selected && option === question.answer;
+              return (
+                <TouchableOpacity
+                  key={option}
+                  style={[local.quizOption, isCorrect && local.quizOptionCorrect, isSelected && !isCorrect && local.quizOptionWrong]}
+                  onPress={() => setAnswers((current) => ({ ...current, [index]: option }))}
+                >
+                  <Text style={[local.quizOptionText, (isCorrect || (isSelected && !isCorrect)) && { color: '#fff' }]}>{option}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            {selected ? (
+              <Text style={local.videoMeta}>
+                {selected === question.answer ? 'Correct. ' : `Correct answer: ${question.answer}. `}
+                {question.explanation}
+              </Text>
+            ) : null}
+          </View>
+        );
+      })}
+    </Card>
+  );
+}
+
+function FlashcardCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Flashcards</Text>
+      {topic.flashcards.length ? topic.flashcards.map((card) => (
+        <View key={`${card.front}-${card.back}`} style={local.flashcard}>
+          <Text style={local.videoTitle}>{card.front}</Text>
+          <Text style={local.videoMeta}>{card.back}</Text>
+        </View>
+      )) : (
+        <Text style={local.listItem}>- Flashcards are ready.</Text>
+      )}
+    </Card>
+  );
+}
+
+function ReferenceCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Reference Links</Text>
+      {topic.reference_links.length ? topic.reference_links.map((link) => (
+        <TouchableOpacity key={link.url} style={local.videoRow} onPress={() => Linking.openURL(link.url)}>
+          <View style={{ flex: 1 }}>
+            <Text style={local.videoTitle}>{link.title}</Text>
+            <Text style={local.videoMeta}>{link.type}</Text>
+          </View>
+          <Text style={local.videoOpen}>Open</Text>
+        </TouchableOpacity>
+      )) : (
+        <Text style={local.listItem}>- Reference links are ready.</Text>
+      )}
+    </Card>
+  );
+}
+
+function VideoCard({ topic }: { topic: LearningTopic }) {
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Video Lectures</Text>
+      {topic.video_lectures.length ? topic.video_lectures.map((video) => (
+        <TouchableOpacity key={video.url} style={local.videoRow} onPress={() => Linking.openURL(video.url)}>
+          <View style={{ flex: 1 }}>
+            <Text style={local.videoTitle}>{video.title}</Text>
+            <Text style={local.videoMeta}>{video.provider}</Text>
+          </View>
+          <Text style={local.videoOpen}>Open</Text>
+        </TouchableOpacity>
+      )) : (
+        <Text style={local.listItem}>- Video slots are ready.</Text>
+      )}
+    </Card>
   );
 }
 
@@ -112,6 +551,18 @@ const local = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 36 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { color: theme.danger },
+  metrics: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  metric: { flex: 1, borderWidth: 1, borderColor: theme.border, borderRadius: 9, backgroundColor: theme.surface, padding: 10 },
+  metricLabel: { color: theme.muted, fontSize: 10, fontWeight: '800' },
+  metricValue: { color: theme.primary, fontSize: 18, fontWeight: '900', marginTop: 2 },
+  search: { color: theme.text, borderWidth: 1, borderColor: theme.border, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 12, fontSize: 13, fontWeight: '700' },
+  filterButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: theme.border, borderRadius: 9, backgroundColor: theme.surface, paddingHorizontal: 12, paddingVertical: 9, marginBottom: 12 },
+  filterButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
+  filterText: { color: theme.muted, fontSize: 12, fontWeight: '900' },
+  languageRow: { flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1, borderColor: theme.border, borderRadius: 9, overflow: 'hidden', marginBottom: 12 },
+  languageButton: { paddingHorizontal: 12, paddingVertical: 9, backgroundColor: theme.surface },
+  languageButtonActive: { backgroundColor: theme.primary },
+  bookmarkMark: { color: theme.primary, fontSize: 10, fontWeight: '900', marginTop: 3 },
   subjectChip: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, marginRight: 8 },
   subjectChipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   subjectChipText: { color: theme.muted, fontWeight: '800', fontSize: 12 },
@@ -123,6 +574,29 @@ const local = StyleSheet.create({
   topicChipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   topicChipText: { color: theme.muted, fontWeight: '800', fontSize: 12 },
   topicTitle: { color: theme.text, fontWeight: '900', fontSize: 19, marginTop: 10, marginBottom: 8 },
+  topicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  saveButton: { marginTop: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
+  saveText: { color: theme.primary, fontWeight: '900', fontSize: 12 },
+  primaryAction: { marginTop: 12, borderRadius: 9, paddingVertical: 11, alignItems: 'center', backgroundColor: theme.primary },
+  primaryActionText: { color: '#fff', fontWeight: '900', fontSize: 12 },
+  progressWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  progressButton: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: theme.bg },
+  progressButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
+  progressText: { color: theme.muted, fontWeight: '900', fontSize: 11, textTransform: 'capitalize' },
   cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 8 },
   listItem: { color: theme.muted, fontSize: 13, lineHeight: 20, marginBottom: 5 },
+  videoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 12, backgroundColor: theme.bg },
+  videoTitle: { color: theme.text, fontWeight: '800', fontSize: 13 },
+  videoMeta: { color: theme.muted, fontSize: 12, marginTop: 3 },
+  videoOpen: { color: theme.primary, fontWeight: '900', fontSize: 12 },
+  exampleSolution: { color: theme.text, fontSize: 12, lineHeight: 18, marginTop: 6 },
+  flashcard: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 12, backgroundColor: theme.bg, marginBottom: 8 },
+  diagramWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  diagramNode: { color: theme.text, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: theme.bg, fontSize: 12, fontWeight: '800' },
+  diagramNodeMain: { color: '#fff', backgroundColor: theme.primary, borderColor: theme.primary },
+  quizQuestion: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 12, backgroundColor: theme.bg, marginBottom: 10 },
+  quizOption: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 9, marginTop: 8 },
+  quizOptionCorrect: { backgroundColor: theme.success, borderColor: theme.success },
+  quizOptionWrong: { backgroundColor: theme.danger, borderColor: theme.danger },
+  quizOptionText: { color: theme.muted, fontWeight: '800', fontSize: 12 },
 });

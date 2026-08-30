@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import {
   pyqGetPracticeTaxonomy,
@@ -19,6 +19,7 @@ const EMPTY_TAXONOMY: PracticeTaxonomyResponse = {
 
 export default function QuizSetup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [taxonomy, setTaxonomy] = useState<PracticeTaxonomyResponse>(EMPTY_TAXONOMY);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -33,10 +34,17 @@ export default function QuizSetup() {
 
   useEffect(() => {
     pyqGetPracticeTaxonomy()
-      .then(setTaxonomy)
+      .then((data) => {
+        setTaxonomy(data);
+        const subjectParam = searchParams.get('subject');
+        if (subjectParam && data.subjects.some((item) => item.name === subjectParam)) {
+          setMode('subject');
+          setSubject(subjectParam);
+        }
+      })
       .catch(() => setError('Could not load practice options. Please refresh to try again.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchParams]);
 
   const chapters = useMemo(
     () => taxonomy.chapters.filter((item) => !subject || item.subject === subject),

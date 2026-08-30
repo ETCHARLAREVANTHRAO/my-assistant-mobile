@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { pyqApi, DailyPracticeResponse, PYQAttemptStartResponse, PYQPaperSummary, PYQResult, PracticeFilter } from '../services/api';
 import HomeScreen from './pyq/HomeScreen';
 import GeneralInstructions from './pyq/GeneralInstructions';
@@ -14,12 +15,21 @@ import AnalyticsScreen from './pyq/AnalyticsScreen';
 type Step = 'home' | 'general' | 'paper_instructions' | 'exam' | 'result' | 'review' | 'practice_setup' | 'topics' | 'analytics';
 
 export default function PYQScreen() {
+  const route = useRoute<any>();
   const [step, setStep] = useState<Step>('home');
   const [selectedPaper, setSelectedPaper] = useState<PYQPaperSummary | null>(null);
   const [attempt, setAttempt] = useState<PYQAttemptStartResponse | null>(null);
   const [result, setResult] = useState<PYQResult | null>(null);
   const [starting, setStarting] = useState(false);
   const [practiceTopic, setPracticeTopic] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const topic = route.params?.practiceTopic;
+    if (typeof topic === 'string' && topic) {
+      setPracticeTopic(topic);
+      setStep('practice_setup');
+    }
+  }, [route.params?.practiceTopic]);
 
   function selectPaper(paper: PYQPaperSummary) {
     setSelectedPaper(paper);

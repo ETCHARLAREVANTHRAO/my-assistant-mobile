@@ -19,6 +19,7 @@ const SECTIONS: Array<{ key: SectionKey; label: string; icon: string }> = [
   { key: 'exam_info', label: 'Exam Notices', icon: 'campaign' },
   { key: 'mentor_sessions', label: 'Mentor Sessions', icon: 'groups' },
   { key: 'short_tricks', label: 'Short Tricks', icon: 'tips_and_updates' },
+  { key: 'learning_overrides', label: 'Learning', icon: 'school' },
 ];
 
 export default function AdminContent() {
