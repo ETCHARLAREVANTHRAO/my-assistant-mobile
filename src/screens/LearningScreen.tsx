@@ -338,6 +338,8 @@ function TopicPanel({
       </Card>
       <TextCard title="Revision Summary" text={revisionNotes} />
       <DiagramCard topic={topic} />
+      <FocusTimerCard topic={topic} />
+      <StudyQuestCard topic={topic} />
       <ListCard title="Prerequisites" items={topic.prerequisites} />
       <ListCard title="Learning Outcomes" items={topic.learning_outcomes} />
       <ListCard title="Core Concepts" items={topic.concepts} />
@@ -422,6 +424,89 @@ function WorkedExamplesCard({ topic }: { topic: LearningTopic }) {
   );
 }
 
+function FocusTimerCard({ topic }: { topic: LearningTopic }) {
+  const [secondsLeft, setSecondsLeft] = useState(Math.min(topic.estimated_study_minutes, 25) * 60);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    setSecondsLeft(Math.min(topic.estimated_study_minutes, 25) * 60);
+    setRunning(false);
+  }, [topic.slug, topic.estimated_study_minutes]);
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const timer = setInterval(() => {
+      setSecondsLeft((value) => {
+        if (value <= 1) {
+          clearInterval(timer);
+          setRunning(false);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+
+  const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const seconds = (secondsLeft % 60).toString().padStart(2, '0');
+
+  return (
+    <Card>
+      <Text style={local.cardTitle}>Focus Timer</Text>
+      <Text style={local.timerText}>{minutes}:{seconds}</Text>
+      <Text style={local.videoMeta}>Use this for one focused pass on notes, examples, or PYQs.</Text>
+      <View style={local.progressWrap}>
+        <TouchableOpacity style={local.primaryAction} onPress={() => setRunning((value) => !value)}>
+          <Text style={local.primaryActionText}>{running ? 'Pause' : 'Start'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={local.progressButton} onPress={() => { setRunning(false); setSecondsLeft(5 * 60); }}>
+          <Text style={local.progressText}>5 min</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={local.progressButton} onPress={() => { setRunning(false); setSecondsLeft(25 * 60); }}>
+          <Text style={local.progressText}>25 min</Text>
+        </TouchableOpacity>
+      </View>
+    </Card>
+  );
+}
+
+function StudyQuestCard({ topic }: { topic: LearningTopic }) {
+  const [done, setDone] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setDone({});
+  }, [topic.slug]);
+
+  const steps = [
+    `Read: ${topic.deep_notes[0]?.heading ?? 'Core notes'}`,
+    `Recall: ${topic.flashcards[0]?.front ?? topic.concepts[0] ?? topic.title}`,
+    `Solve: ${topic.practice_tasks[0] ?? 'one practice task'}`,
+    `Check: ${topic.quiz_questions[0]?.question ?? 'one quick question'}`,
+    `Revise: ${topic.revision_schedule[0]?.task ?? 'add this topic to revision'}`,
+  ];
+  const completed = steps.filter((_, index) => done[index]).length;
+
+  return (
+    <Card>
+      <View style={local.cardHeaderRow}>
+        <Text style={local.cardTitle}>Study Quest</Text>
+        <Text style={local.questCount}>{completed}/{steps.length}</Text>
+      </View>
+      {steps.map((step, index) => (
+        <TouchableOpacity
+          key={step}
+          style={[local.questStep, done[index] && local.questStepDone]}
+          onPress={() => setDone((current) => ({ ...current, [index]: !current[index] }))}
+        >
+          <Text style={local.questMark}>{done[index] ? '✓' : '○'}</Text>
+          <Text style={local.questText}>{step}</Text>
+        </TouchableOpacity>
+      ))}
+    </Card>
+  );
+}
+
 function DiagramCard({ topic }: { topic: LearningTopic }) {
   if (!topic.diagram) return null;
   return (
@@ -483,14 +568,33 @@ function TopicQuizCard({ topic }: { topic: LearningTopic }) {
 }
 
 function FlashcardCard({ topic }: { topic: LearningTopic }) {
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setRevealed({});
+  }, [topic.slug]);
+
   return (
     <Card>
-      <Text style={local.cardTitle}>Flashcards</Text>
+      <View style={local.cardHeaderRow}>
+        <Text style={local.cardTitle}>Flashcards</Text>
+        <TouchableOpacity onPress={() => setRevealed({})}>
+          <Text style={local.videoOpen}>Reset</Text>
+        </TouchableOpacity>
+      </View>
       {topic.flashcards.length ? topic.flashcards.map((card) => (
-        <View key={`${card.front}-${card.back}`} style={local.flashcard}>
-          <Text style={local.videoTitle}>{card.front}</Text>
-          <Text style={local.videoMeta}>{card.back}</Text>
-        </View>
+        <TouchableOpacity
+          key={`${card.front}-${card.back}`}
+          style={[local.flashcard, revealed[topic.flashcards.indexOf(card)] && local.flashcardRevealed]}
+          onPress={() => {
+            const index = topic.flashcards.indexOf(card);
+            setRevealed((current) => ({ ...current, [index]: !current[index] }));
+          }}
+        >
+          <Text style={local.videoMeta}>{revealed[topic.flashcards.indexOf(card)] ? 'Answer' : 'Prompt'}</Text>
+          <Text style={local.videoTitle}>{revealed[topic.flashcards.indexOf(card)] ? card.back : card.front}</Text>
+          <Text style={local.videoOpen}>{revealed[topic.flashcards.indexOf(card)] ? 'Tap to hide' : 'Tap to reveal'}</Text>
+        </TouchableOpacity>
       )) : (
         <Text style={local.listItem}>- Flashcards are ready.</Text>
       )}
@@ -574,6 +678,12 @@ const local = StyleSheet.create({
   topicChipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   topicChipText: { color: theme.muted, fontWeight: '800', fontSize: 12 },
   topicTitle: { color: theme.text, fontWeight: '900', fontSize: 19, marginTop: 10, marginBottom: 8 },
+  timerText: { color: theme.primary, fontSize: 32, fontWeight: '900', marginBottom: 4 },
+  questCount: { color: theme.primary, fontSize: 12, fontWeight: '900', backgroundColor: theme.primaryFixed, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  questStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 11, backgroundColor: theme.bg, marginBottom: 8 },
+  questStepDone: { borderColor: theme.success, backgroundColor: '#ecfdf5' },
+  questMark: { color: theme.primary, fontWeight: '900', fontSize: 14, width: 18 },
+  questText: { color: theme.text, fontSize: 12, lineHeight: 18, fontWeight: '700', flex: 1 },
   topicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   saveButton: { marginTop: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
   saveText: { color: theme.primary, fontWeight: '900', fontSize: 12 },
@@ -584,6 +694,7 @@ const local = StyleSheet.create({
   progressButtonActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   progressText: { color: theme.muted, fontWeight: '900', fontSize: 11, textTransform: 'capitalize' },
   cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 8 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   listItem: { color: theme.muted, fontSize: 13, lineHeight: 20, marginBottom: 5 },
   videoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 12, backgroundColor: theme.bg },
   videoTitle: { color: theme.text, fontWeight: '800', fontSize: 13 },
@@ -591,6 +702,7 @@ const local = StyleSheet.create({
   videoOpen: { color: theme.primary, fontWeight: '900', fontSize: 12 },
   exampleSolution: { color: theme.text, fontSize: 12, lineHeight: 18, marginTop: 6 },
   flashcard: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, padding: 12, backgroundColor: theme.bg, marginBottom: 8 },
+  flashcardRevealed: { borderColor: theme.primary, backgroundColor: theme.primaryFixed },
   diagramWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   diagramNode: { color: theme.text, borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: theme.bg, fontSize: 12, fontWeight: '800' },
   diagramNodeMain: { color: '#fff', backgroundColor: theme.primary, borderColor: theme.primary },

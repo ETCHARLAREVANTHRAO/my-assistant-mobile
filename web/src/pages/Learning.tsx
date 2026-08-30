@@ -632,6 +632,8 @@ function TopicPanel({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DiagramBlock topic={topic} />
+        <FocusTimer topic={topic} />
+        <StudyQuest topic={topic} />
         <ResourceBlock icon="playlist_add_check" title="Prerequisites" items={topic.prerequisites} />
         <ResourceBlock icon="workspace_premium" title="Learning Outcomes" items={topic.learning_outcomes} />
         <TextBlock icon="notes" title="Written Notes" text={writtenNotes} />
@@ -652,20 +654,7 @@ function TopicPanel({
       <DeepNotesBlock topic={topic} />
       <RevisionScheduleBlock topic={topic} />
 
-      <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-primary">style</span>
-          <h4 className="font-headline-sm text-headline-sm text-text-primary">Flashcards</h4>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {topic.flashcards.map((card) => (
-            <div key={`${card.front}-${card.back}`} className="rounded-lg border border-border bg-surface-container-lowest p-3">
-              <p className="font-label-md text-label-md text-text-primary">{card.front}</p>
-              <p className="font-body-sm text-body-sm text-text-muted mt-2 leading-relaxed">{card.back}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <FlashcardDeck topic={topic} />
 
       <TopicQuiz topic={topic} />
 
@@ -794,6 +783,142 @@ function WorkedExamplesBlock({ topic }: { topic: LearningTopic }) {
             <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant leading-relaxed">{example.solution}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function FocusTimer({ topic }: { topic: LearningTopic }) {
+  const [secondsLeft, setSecondsLeft] = useState(Math.min(topic.estimated_study_minutes, 25) * 60);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    setSecondsLeft(Math.min(topic.estimated_study_minutes, 25) * 60);
+    setRunning(false);
+  }, [topic.slug, topic.estimated_study_minutes]);
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const timer = window.setInterval(() => {
+      setSecondsLeft((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          setRunning(false);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [running]);
+
+  const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const seconds = (secondsLeft % 60).toString().padStart(2, '0');
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5 min-h-[210px]">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">timer</span>
+        <h4 className="font-headline-sm text-headline-sm text-text-primary">Focus Timer</h4>
+      </div>
+      <p className="font-headline-lg text-headline-lg text-primary">{minutes}:{seconds}</p>
+      <p className="mt-2 font-body-sm text-body-sm text-text-muted">Use this for one focused pass on notes, examples, or PYQs.</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={() => setRunning((value) => !value)} className="rounded-lg bg-primary px-4 py-2 font-label-sm text-label-sm text-on-primary">
+          {running ? 'Pause' : 'Start'}
+        </button>
+        <button onClick={() => { setRunning(false); setSecondsLeft(5 * 60); }} className="rounded-lg border border-border px-4 py-2 font-label-sm text-label-sm text-text-muted">5 min</button>
+        <button onClick={() => { setRunning(false); setSecondsLeft(25 * 60); }} className="rounded-lg border border-border px-4 py-2 font-label-sm text-label-sm text-text-muted">25 min</button>
+      </div>
+    </div>
+  );
+}
+
+function StudyQuest({ topic }: { topic: LearningTopic }) {
+  const [done, setDone] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setDone({});
+  }, [topic.slug]);
+
+  const steps = [
+    `Read: ${topic.deep_notes[0]?.heading ?? 'Core notes'}`,
+    `Recall: ${topic.flashcards[0]?.front ?? topic.concepts[0] ?? topic.title}`,
+    `Solve: ${topic.practice_tasks[0] ?? 'one practice task'}`,
+    `Check: ${topic.quiz_questions[0]?.question ?? 'one quick question'}`,
+    `Revise: ${topic.revision_schedule[0]?.task ?? 'add this topic to revision'}`,
+  ];
+  const completed = steps.filter((_, index) => done[index]).length;
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5 min-h-[210px]">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">checklist</span>
+          <h4 className="font-headline-sm text-headline-sm text-text-primary">Study Quest</h4>
+        </div>
+        <span className="rounded-full bg-primary-fixed px-3 py-1 font-label-sm text-label-sm text-primary">{completed}/{steps.length}</span>
+      </div>
+      <div className="space-y-2">
+        {steps.map((step, index) => (
+          <button
+            key={step}
+            onClick={() => setDone((current) => ({ ...current, [index]: !current[index] }))}
+            className={
+              done[index]
+                ? 'flex w-full items-start gap-3 rounded-lg border border-success bg-success/10 px-3 py-2 text-left'
+                : 'flex w-full items-start gap-3 rounded-lg border border-border bg-surface-container-lowest px-3 py-2 text-left hover:border-primary/40'
+            }
+          >
+            <span className="material-symbols-outlined text-base text-primary">{done[index] ? 'check_circle' : 'radio_button_unchecked'}</span>
+            <span className="font-body-sm text-body-sm text-text-primary leading-relaxed">{step}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FlashcardDeck({ topic }: { topic: LearningTopic }) {
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setRevealed({});
+  }, [topic.slug]);
+
+  return (
+    <div className="bg-surface rounded-lg border border-border shadow-soft p-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">style</span>
+          <h4 className="font-headline-sm text-headline-sm text-text-primary">Flashcards</h4>
+        </div>
+        <button
+          onClick={() => setRevealed({})}
+          className="rounded-lg border border-border bg-surface-container-lowest px-3 py-1.5 font-label-sm text-label-sm text-text-muted hover:border-primary/40"
+        >
+          Reset
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {topic.flashcards.map((card, index) => {
+          const showBack = revealed[index];
+          return (
+            <button
+              key={`${card.front}-${card.back}`}
+              onClick={() => setRevealed((current) => ({ ...current, [index]: !current[index] }))}
+              className={
+                showBack
+                  ? 'min-h-[130px] rounded-lg border border-primary bg-primary-fixed p-4 text-left transition-colors'
+                  : 'min-h-[130px] rounded-lg border border-border bg-surface-container-lowest p-4 text-left hover:border-primary/40 transition-colors'
+              }
+            >
+              <p className="font-label-sm text-label-sm text-text-muted">{showBack ? 'Answer' : 'Prompt'}</p>
+              <p className="mt-2 font-label-md text-label-md text-text-primary">{showBack ? card.back : card.front}</p>
+              <p className="mt-3 font-label-sm text-label-sm text-primary">{showBack ? 'Tap to hide' : 'Tap to reveal'}</p>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
